@@ -1,0 +1,6 @@
+- id: 1
+  sign_id: "siteadm"
+  name: "사이트 관리자"
+  password: "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG"
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
