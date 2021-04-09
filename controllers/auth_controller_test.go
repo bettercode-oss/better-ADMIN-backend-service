@@ -30,7 +30,6 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
 }
 
-
 func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
 	// given
 	gormDB, err := gorm.Open(sqlite.Open("file::memory:?mode=memory&cache=shared"), &gorm.Config{
@@ -81,5 +80,6 @@ func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	var resp interface{}
 	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NotEmpty(t, resp.(map[string]interface{})["jwtToken"])
+	assert.NotEmpty(t, resp.(map[string]interface{})["accessToken"])
+	assert.NotEmpty(t, resp.(map[string]interface{})["refreshToken"])
 }

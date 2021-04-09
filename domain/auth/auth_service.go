@@ -10,7 +10,7 @@ import (
 type AuthService struct {
 }
 
-func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (jwtToken string, err error) {
+func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (token map[string]string, err error) {
 	memberEntity, err := member.MemberService{}.GetMemberBySignId(ctx, signIn.Id)
 	if err != nil {
 		return
@@ -22,6 +22,6 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 		return
 	}
 
-	jwtToken, err = JwtTokenGenerator{member: memberEntity}.Generate()
+	token, err = JwtTokenGenerator{member: memberEntity}.Generate()
 	return
 }

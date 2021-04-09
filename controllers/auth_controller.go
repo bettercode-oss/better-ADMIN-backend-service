@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-
 type AuthController struct {
 }
 
@@ -27,7 +26,7 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	jwtToken, err := auth.AuthService{}.AuthWithSignIdPassword(ctx.Request().Context(), memberSignIn)
+	token, err := auth.AuthService{}.AuthWithSignIdPassword(ctx.Request().Context(), memberSignIn)
 	if err != nil {
 		if err == domain.ErrNotFound || err == domain.ErrAuthentication {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -36,10 +35,5 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	result := map[string]string{
-		"jwtToken": jwtToken,
-	}
-
-	return ctx.JSON(http.StatusOK, result)
+	return ctx.JSON(http.StatusOK, token)
 }
-
