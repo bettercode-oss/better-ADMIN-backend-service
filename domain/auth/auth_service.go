@@ -4,13 +4,14 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/security"
 	"context"
 )
 
 type AuthService struct {
 }
 
-func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (token map[string]string, err error) {
+func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (token security.JwtToken, err error) {
 	memberEntity, err := member.MemberService{}.GetMemberBySignId(ctx, signIn.Id)
 	if err != nil {
 		return
@@ -22,6 +23,8 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 		return
 	}
 
-	token, err = JwtTokenGenerator{member: memberEntity}.Generate()
+	token, err = security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
+		Id: memberEntity.ID,
+	})
 	return
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/keepeye/logrus-filename"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	echomiddleware "github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/color"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
@@ -21,7 +21,7 @@ import (
 const (
 	Version = "0.0.1"
 	website = "https://www.bettercode.kr"
-	banner = `
+	banner  = `
   __        __   __                    ___    ___    __  ___   ____   _  __
   / /  ___  / /_ / /_ ___   ____       / _ |  / _ \  /  |/  /  /  _/  / |/ /
  / _ \/ -_)/ __// __// -_) / __/      / __ | / // / / /|_/ /  _/ /   /    / 
@@ -71,26 +71,29 @@ func initializeDatabase(db *gorm.DB) error {
 	return nil
 }
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
-}
-
 func main() {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()}
-	e.Pre(middleware.RemoveTrailingSlash())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
+	e.Pre(echomiddleware.RemoveTrailingSlash())
+	e.Use(echomiddleware.Recover())
+	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
+		AllowCredentials: true,
+	}))
+
 	e.Use(middlewares.GORMDb(gormDB))
+	e.Use(middlewares.JwtToken())
 	e.HideBanner = true
 
 	controllers.AuthController{}.Init(e.Group("/api/auth"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")
+}
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
 }

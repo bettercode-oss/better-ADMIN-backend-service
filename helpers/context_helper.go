@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"better-admin-backend-service/security"
 	"context"
 	"gorm.io/gorm"
 	"sync"
 )
 
 const ContextDBKey = "DB"
+const ContextUserClaimKey = "userClaim"
 
 var (
 	contextHelperOnce     sync.Once
@@ -37,4 +39,8 @@ func (contextHelper) GetDB(ctx context.Context) *gorm.DB {
 
 func (contextHelper) SetDB(ctx context.Context, gormDB *gorm.DB) context.Context {
 	return context.WithValue(ctx, ContextDBKey, gormDB)
+}
+
+func (contextHelper) SetUserClaim(ctx context.Context, userClaim *security.UserClaim) context.Context {
+	return context.WithValue(ctx, ContextUserClaimKey, userClaim)
 }
