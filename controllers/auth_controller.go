@@ -15,7 +15,8 @@ type AuthController struct {
 
 func (controller AuthController) Init(g *echo.Group) {
 	g.POST("", controller.AuthWithSignIdPassword)
-	g.POST("/check", controller.CheckAuth)
+	g.POST("/dooray", controller.AuthWithDoorayIdPassword)
+	g.GET("/check", controller.CheckAuth)
 	g.POST("/logout", controller.Logout)
 	g.POST("/token/refresh", controller.RefreshAccessToken)
 }
@@ -102,5 +103,44 @@ func (AuthController) RefreshAccessToken(ctx echo.Context) error {
 
 	result := map[string]string{}
 	result["accessToken"] = accessToken
+	return ctx.JSON(http.StatusOK, result)
+}
+
+func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) error {
+	var memberSignIn dtos.MemberSignIn
+
+	if err := ctx.Bind(&memberSignIn); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if err := memberSignIn.Validate(ctx); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	jwtToken, err := auth.AuthService{}.AuthWithDoorayIdAndPassword(ctx.Request().Context(), memberSignIn)
+	if err != nil {
+		if err == domain.ErrAuthentication {
+			return ctx.JSON(http.StatusBadRequest, err.Error())
+		}
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	refreshToken, err := ctx.Cookie("refreshToken")
+	if err != nil || len(refreshToken.Value) == 0 {
+		cookie := new(http.Cookie)
+		cookie.Name = "refreshToken"
+		cookie.Value = jwtToken.RefreshToken
+		cookie.HttpOnly = true
+		cookie.Path = "/"
+		ctx.SetCookie(cookie)
+	} else {
+		refreshToken.Value = jwtToken.RefreshToken
+		refreshToken.HttpOnly = true
+		refreshToken.Path = "/"
+		ctx.SetCookie(refreshToken)
+	}
+
+	result := map[string]string{}
+	result["accessToken"] = jwtToken.AccessToken
 	return ctx.JSON(http.StatusOK, result)
 }

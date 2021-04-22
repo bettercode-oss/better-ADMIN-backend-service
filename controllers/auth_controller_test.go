@@ -33,3 +33,26 @@ func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
 	json.Unmarshal(rec.Body.Bytes(), &resp)
 	assert.NotEmpty(t, resp.(map[string]interface{})["accessToken"])
 }
+
+func TestAuthController_AuthWithDoorayIdPassword(t *testing.T) {
+	// given
+	requestBody := `{
+		"id": "ymyoo",
+		"password": "10dooray23!"
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/dooray", strings.NewReader(requestBody))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(AuthController{}.AuthWithDoorayIdPassword, ctx)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusOK, rec.Code)
+	//var resp interface{}
+	//json.Unmarshal(rec.Body.Bytes(), &resp)
+	//assert.NotEmpty(t, resp.(map[string]interface{})["accessToken"])
+}

@@ -1,3 +1,6 @@
 {
-  "JwtSecret": "betterAdminSecret"
+  "JwtSecret": "betterAdminSecret",
+  "Dooray": {
+    "LdapDialUrl": "ldaps://ldap.dooray.com:636"
+  }
 }

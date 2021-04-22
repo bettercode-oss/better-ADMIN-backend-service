@@ -3,6 +3,7 @@ package helpers
 import (
 	"better-admin-backend-service/security"
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"sync"
 )
@@ -43,4 +44,15 @@ func (contextHelper) SetDB(ctx context.Context, gormDB *gorm.DB) context.Context
 
 func (contextHelper) SetUserClaim(ctx context.Context, userClaim *security.UserClaim) context.Context {
 	return context.WithValue(ctx, ContextUserClaimKey, userClaim)
+}
+
+func (contextHelper) GetUserClaim(ctx context.Context) (*security.UserClaim, error) {
+	v := ctx.Value(ContextUserClaimKey)
+	if v == nil {
+		return nil, errors.New("UserClaim is not exist")
+	}
+	if userClaim, ok := v.(*security.UserClaim); ok {
+		return userClaim, nil
+	}
+	return nil, errors.New("UserClaim is not exist")
 }

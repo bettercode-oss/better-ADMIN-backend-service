@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/security"
 	"github.com/labstack/echo"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
@@ -39,6 +40,19 @@ func JwtToken() echo.MiddlewareFunc {
 			req := c.Request()
 			req = req.WithContext(helpers.ContextHelper().SetUserClaim(req.Context(), userClaim))
 			c.SetRequest(req)
+			return next(c)
+		}
+	}
+}
+
+func CheckAuth() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			_, err := helpers.ContextHelper().GetUserClaim(c.Request().Context())
+			if err != nil {
+				log.Warnf("No valid credentials: %s", c.Request().RequestURI)
+				return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
+			}
 			return next(c)
 		}
 	}

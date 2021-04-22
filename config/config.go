@@ -6,6 +6,9 @@ import (
 
 var Config = struct {
 	JwtSecret string
+	Dooray    struct {
+		LdapDialUrl string
+	}
 }{}
 
 func InitConfig(cfg string) {

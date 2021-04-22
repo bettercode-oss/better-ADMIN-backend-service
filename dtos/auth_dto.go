@@ -10,3 +10,10 @@ type MemberSignIn struct {
 func (m MemberSignIn) Validate(ctx echo.Context) error {
 	return ctx.Validate(m)
 }
+
+type DoorayMember struct {
+	Id                   string `json:"id"`
+	UserCode             string `json:"userCode"`
+	Name                 string `json:"name"`
+	ExternalEmailAddress string `json:"externalEmailAddress"`
+}

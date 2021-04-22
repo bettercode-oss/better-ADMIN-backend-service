@@ -1,0 +1,5 @@
+- id: 1
+  key: "dooray-login"
+  value: {"used":true,"domain":"bettercode","authorizationToken":"test token...."}
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')

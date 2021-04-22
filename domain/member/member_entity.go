@@ -6,11 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	MemberTypeSite   = "site"
+	MemberTypeDooray = "dooray"
+)
+
 type MemberEntity struct {
 	gorm.Model
-	SignId   string `gorm:"unique"`
-	Name     string
-	Password string
+	Type           string
+	SignId         string
+	Name           string
+	Password       string
+	DoorayId       string
+	DoorayUserCode string
 }
 
 func (MemberEntity) TableName() string {

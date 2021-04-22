@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/controllers"
 	"better-admin-backend-service/domain/member"
+	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/middlewares"
 	"fmt"
 	"github.com/go-playground/validator/v10"
@@ -56,7 +57,7 @@ func init() {
 func initializeDatabase(db *gorm.DB) error {
 	fmt.Println(">>> InitializeDatabase")
 	// 테이블 생성
-	if err := db.AutoMigrate(&member.MemberEntity{}); err != nil {
+	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}); err != nil {
 		return err
 	}
 	// siteadm 계정 만들기
@@ -64,8 +65,8 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT sign_id FROM members WHERE sign_id = ?", "siteadm").Scan(&signId)
 
 	if len(signId) == 0 {
-		db.Exec("INSERT INTO members(sign_id, name, password, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG")
+		db.Exec("INSERT INTO members(type, sign_id, name, password, created_at, updated_at) values(?, ?, ?, ?, datetime('now'), datetime('now'))",
+			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG")
 	}
 
 	return nil
@@ -85,6 +86,8 @@ func main() {
 	e.HideBanner = true
 
 	controllers.AuthController{}.Init(e.Group("/api/auth"))
+	controllers.SiteController{}.Init(e.Group("/api/site"))
+	controllers.MemberController{}.Init(e.Group("/api/members"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")
