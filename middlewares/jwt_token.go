@@ -45,15 +45,30 @@ func JwtToken() echo.MiddlewareFunc {
 	}
 }
 
-func CheckAuth() echo.MiddlewareFunc {
+func CheckPermission(allowPermissions []string) echo.MiddlewareFunc {
+	allowPermissionMap := make(map[string]bool)
+	for _, permission := range allowPermissions {
+		allowPermissionMap[permission] = true
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			_, err := helpers.ContextHelper().GetUserClaim(c.Request().Context())
+			userClaim, err := helpers.ContextHelper().GetUserClaim(c.Request().Context())
 			if err != nil {
 				log.Warnf("No valid credentials: %s", c.Request().RequestURI)
 				return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
 			}
-			return next(c)
+			if len(allowPermissions) == 1 && allowPermissions[0] == "*" {
+				return next(c)
+			} else {
+				for _, permission := range userClaim.Permissions {
+					if allowPermissionMap[permission] {
+						return next(c)
+					}
+				}
+				log.Warnf("Can't access this API: %s", c.Request().RequestURI)
+				return echo.NewHTTPError(http.StatusForbidden, "Can't access this API")
+			}
 		}
 	}
 }

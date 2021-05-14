@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-type SiteSettingRepository struct {
+type siteSettingRepository struct {
 }
 
-func (SiteSettingRepository) Save(ctx context.Context, entity SettingEntity) error {
+func (siteSettingRepository) Save(ctx context.Context, entity SettingEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(&entity).Error; err != nil {
 		return err
@@ -20,7 +20,7 @@ func (SiteSettingRepository) Save(ctx context.Context, entity SettingEntity) err
 	return nil
 }
 
-func (SiteSettingRepository) FindByKey(ctx context.Context, key string) (SettingEntity, error) {
+func (siteSettingRepository) FindByKey(ctx context.Context, key string) (SettingEntity, error) {
 	var setting SettingEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
@@ -36,7 +36,7 @@ func (SiteSettingRepository) FindByKey(ctx context.Context, key string) (Setting
 	return setting, nil
 }
 
-func (SiteSettingRepository) FindAll(ctx context.Context) ([]SettingEntity, error) {
+func (siteSettingRepository) FindAll(ctx context.Context) ([]SettingEntity, error) {
 	var settings []SettingEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)

@@ -12,6 +12,8 @@ import (
 )
 
 func TestSiteController_SetDoorayLoginSetting(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
 	// given
 	requestBody := `{
 		"used": true,
@@ -32,6 +34,8 @@ func TestSiteController_SetDoorayLoginSetting(t *testing.T) {
 }
 
 func TestSiteController_GetDoorayLoginSetting(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/dooray-login", nil)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

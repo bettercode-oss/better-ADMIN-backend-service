@@ -36,10 +36,10 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	}
 
 	refreshTokenClaims := jwt.MapClaims{}
-	// TODO config 로 빼자.
 	for key, value := range claimMap {
 		refreshTokenClaims[key] = value
 	}
+	// TODO config 로 빼자.
 	refreshTokenClaims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 

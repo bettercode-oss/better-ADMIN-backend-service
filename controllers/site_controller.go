@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/middlewares"
 	"github.com/labstack/echo"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -14,9 +15,8 @@ type SiteController struct {
 
 func (controller SiteController) Init(g *echo.Group) {
 	g.GET("/settings", controller.GetSettingsSummary)
-	// TODO 권한 필터 추가
-	g.PUT("/settings/dooray-login", controller.SetDoorayLoginSetting)
-	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting)
+	g.PUT("/settings/dooray-login", controller.SetDoorayLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
+	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
 }
 
 func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {

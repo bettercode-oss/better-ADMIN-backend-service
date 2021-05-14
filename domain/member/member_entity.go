@@ -1,14 +1,19 @@
 package member
 
 import (
+	"better-admin-backend-service/domain/rbac"
+	"better-admin-backend-service/dtos"
+	"context"
 	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 const (
-	MemberTypeSite   = "site"
-	MemberTypeDooray = "dooray"
+	TypeMemberSite       = "site"
+	TypeMemberSiteName   = "사이트"
+	TypeMemberDooray     = "dooray"
+	TypeMemberDoorayName = "두레이"
 )
 
 type MemberEntity struct {
@@ -19,6 +24,7 @@ type MemberEntity struct {
 	Password       string
 	DoorayId       string
 	DoorayUserCode string
+	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
 func (MemberEntity) TableName() string {
@@ -58,4 +64,69 @@ func (m MemberEntity) comparePasswords(hashedPwd string, plainPwd string) bool {
 	}
 
 	return true
+}
+
+func (m MemberEntity) GetTypeName() string {
+	if m.Type == TypeMemberSite {
+		return TypeMemberSiteName
+	}
+
+	if m.Type == TypeMemberDooray {
+		return TypeMemberDoorayName
+	}
+
+	return ""
+}
+
+func (m *MemberEntity) AssignRole(ctx context.Context, role dtos.MemberAssignRole) error {
+	// 기존 역할을 덮어쓰기
+	filters := map[string]interface{}{}
+	filters["roleIds"] = role.RoleIds
+
+	findRoleEntities, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
+	if err != nil {
+		return err
+	}
+
+	m.Roles = findRoleEntities
+
+	return nil
+}
+
+func (m MemberEntity) GetRoleNames() []string {
+	var rolesNames = make([]string, 0)
+	if m.Roles == nil {
+		return rolesNames
+	}
+
+	for _, role := range m.Roles {
+		rolesNames = append(rolesNames, role.Name)
+	}
+
+	return rolesNames
+}
+
+func (m MemberEntity) GetPermissionNames() []string {
+	// 역할에 할당된 권한을 반환한다.
+	// 권한이 중복이 일어날 수 있기 때문에 중복을 없애고 반환한다.
+	keys := make(map[string]bool)
+	permissionNames := make([]string, 0)
+	if m.Roles == nil {
+		return permissionNames
+	}
+
+	for _, role := range m.Roles {
+		if role.Permissions == nil {
+			continue
+		}
+
+		for _, permission := range role.Permissions {
+			if _, value := keys[permission.Name]; !value {
+				keys[permission.Name] = true
+				permissionNames = append(permissionNames, permission.Name)
+			}
+		}
+	}
+
+	return permissionNames
 }

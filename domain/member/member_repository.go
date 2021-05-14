@@ -2,21 +2,25 @@ package member
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-type MemberRepository struct {
+type memberRepository struct {
 }
 
-func (r MemberRepository) FindBySignId(ctx context.Context, signId string) (MemberEntity, error) {
+func (r memberRepository) FindBySignId(ctx context.Context, signId string) (MemberEntity, error) {
 	var memberEntity MemberEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
-	if err := db.Where(&MemberEntity{SignId: signId}).First(&memberEntity).Error; err != nil {
+	if err := db.Where(&MemberEntity{SignId: signId}).
+		Preload("Roles.Permissions").Preload(clause.Associations).
+		First(&memberEntity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return memberEntity, domain.ErrNotFound
 		}
@@ -27,12 +31,14 @@ func (r MemberRepository) FindBySignId(ctx context.Context, signId string) (Memb
 	return memberEntity, nil
 }
 
-func (MemberRepository) FindByDoorayId(ctx context.Context, doorayId string) (MemberEntity, error) {
+func (memberRepository) FindByDoorayId(ctx context.Context, doorayId string) (MemberEntity, error) {
 	var memberEntity MemberEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
-	if err := db.Where(&MemberEntity{DoorayId: doorayId}).First(&memberEntity).Error; err != nil {
+	if err := db.Where(&MemberEntity{DoorayId: doorayId}).
+		Preload("Roles.Permissions").Preload(clause.Associations).
+		First(&memberEntity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return memberEntity, domain.ErrNotFound
 		}
@@ -43,7 +49,7 @@ func (MemberRepository) FindByDoorayId(ctx context.Context, doorayId string) (Me
 	return memberEntity, nil
 }
 
-func (MemberRepository) CreateMember(ctx context.Context, entity *MemberEntity) error {
+func (memberRepository) Create(ctx context.Context, entity *MemberEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(entity).Error; err != nil {
 		return err
@@ -51,12 +57,12 @@ func (MemberRepository) CreateMember(ctx context.Context, entity *MemberEntity) 
 	return nil
 }
 
-func (MemberRepository) FindById(ctx context.Context, id uint) (MemberEntity, error) {
+func (memberRepository) FindById(ctx context.Context, id uint) (MemberEntity, error) {
 	var memberEntity MemberEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
-	if err := db.First(&memberEntity, id).Error; err != nil {
+	if err := db.Preload("Roles.Permissions").Preload(clause.Associations).First(&memberEntity, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return memberEntity, domain.ErrNotFound
 		}
@@ -65,4 +71,28 @@ func (MemberRepository) FindById(ctx context.Context, id uint) (MemberEntity, er
 	}
 
 	return memberEntity, nil
+}
+
+func (memberRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]MemberEntity, int64, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&MemberEntity{})
+
+	var entities = make([]MemberEntity, 0)
+	var totalCount int64
+	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).
+		Preload("Roles.Permissions").Preload(clause.Associations).
+		Find(&entities).Error; err != nil {
+		return entities, totalCount, err
+	}
+
+	return entities, totalCount, nil
+}
+
+func (memberRepository) Save(ctx context.Context, entity *MemberEntity) error {
+	db := helpers.ContextHelper().GetDB(ctx)
+
+	if err := db.Model(entity).Association("Roles").Replace(entity.Roles); err != nil {
+		return err
+	}
+
+	return db.Save(entity).Error
 }

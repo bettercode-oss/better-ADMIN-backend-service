@@ -1,0 +1,8 @@
+- role_entity_id: 1
+  permission_entity_id: 1
+- role_entity_id: 1
+  permission_entity_id: 2
+- role_entity_id: 2
+  permission_entity_id: 2
+- role_entity_id: 3
+  permission_entity_id: 1

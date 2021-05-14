@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/controllers"
 	"better-admin-backend-service/domain/member"
+	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/middlewares"
 	"fmt"
@@ -57,9 +58,37 @@ func init() {
 func initializeDatabase(db *gorm.DB) error {
 	fmt.Println(">>> InitializeDatabase")
 	// 테이블 생성
-	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}); err != nil {
+	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{}); err != nil {
 		return err
 	}
+
+	var permissionCount int64
+	db.Raw("SELECT count(*) FROM permissions WHERE type= 'pre-define'").Scan(&permissionCount)
+
+	if permissionCount == 0 {
+		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
+			"pre-define", "MANAGE_SYSTEM_SETTINGS", "시스템 설정(예. 두레이 로그인 등) 권한")
+
+		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
+			"pre-define", "MANAGE_MEMBERS", "멤버 관리 권한")
+
+		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
+			"pre-define", "MANAGE_ACCESS_CONTROL", "접근 제어 관리 권한")
+	}
+
+	var roleCount int64
+	db.Raw("SELECT count(*) FROM roles WHERE type= 'pre-define'").Scan(&roleCount)
+
+	if roleCount == 0 {
+		db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
+			"pre-define", "시스템 관리자", "")
+		db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1)")
+
+		db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
+			"pre-define", "멤버 관리자", "")
+		db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3)")
+	}
+
 	// siteadm 계정 만들기
 	var signId string
 	db.Raw("SELECT sign_id FROM members WHERE sign_id = ?", "siteadm").Scan(&signId)
@@ -67,6 +96,9 @@ func initializeDatabase(db *gorm.DB) error {
 	if len(signId) == 0 {
 		db.Exec("INSERT INTO members(type, sign_id, name, password, created_at, updated_at) values(?, ?, ?, ?, datetime('now'), datetime('now'))",
 			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG")
+
+		// 사이트 관리자에 사전 정의된 두가지 역할을 할당한다.(시스템 관리자, 멤버 관리자)
+		db.Exec("INSERT INTO member_roles(member_entity_id, role_entity_id) values(1, 1),(1, 2)")
 	}
 
 	return nil
@@ -88,6 +120,7 @@ func main() {
 	controllers.AuthController{}.Init(e.Group("/api/auth"))
 	controllers.SiteController{}.Init(e.Group("/api/site"))
 	controllers.MemberController{}.Init(e.Group("/api/members"))
+	controllers.AccessControlController{}.Init(e.Group("/api/access-control"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")

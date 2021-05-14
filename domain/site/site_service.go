@@ -9,7 +9,7 @@ type SiteService struct {
 }
 
 func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting interface{}) error {
-	repository := SiteSettingRepository{}
+	repository := siteSettingRepository{}
 
 	foundSettingEntity, err := repository.FindByKey(ctx, key)
 	if err != nil {
@@ -29,7 +29,7 @@ func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting in
 }
 
 func (SiteService) GetSettingWithKey(ctx context.Context, key string) (interface{}, error) {
-	settingEntity, err := SiteSettingRepository{}.FindByKey(ctx, key)
+	settingEntity, err := siteSettingRepository{}.FindByKey(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -37,5 +37,5 @@ func (SiteService) GetSettingWithKey(ctx context.Context, key string) (interface
 }
 
 func (SiteService) GetSettings(ctx context.Context) ([]SettingEntity, error) {
-	return SiteSettingRepository{}.FindAll(ctx)
+	return siteSettingRepository{}.FindAll(ctx)
 }

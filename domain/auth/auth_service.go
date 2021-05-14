@@ -28,7 +28,9 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 	}
 
 	token, err = security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
-		Id: memberEntity.ID,
+		Id:          memberEntity.ID,
+		Roles:       memberEntity.GetRoleNames(),
+		Permissions: memberEntity.GetPermissionNames(),
 	})
 	return
 }
@@ -59,7 +61,7 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 	if err != nil {
 		if err == domain.ErrNotFound {
 			newMemberEntity := member.MemberEntity{
-				Type:           member.MemberTypeDooray,
+				Type:           member.TypeMemberDooray,
 				DoorayId:       doorayMember.Id,
 				DoorayUserCode: doorayMember.UserCode,
 				Name:           doorayMember.Name,
@@ -70,13 +72,17 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 			}
 
 			return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
-				Id: newMemberEntity.ID,
+				Id:          newMemberEntity.ID,
+				Roles:       memberEntity.GetRoleNames(),
+				Permissions: memberEntity.GetPermissionNames(),
 			})
 		}
 		return security.JwtToken{}, err
 	}
 
 	return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
-		Id: memberEntity.ID,
+		Id:          memberEntity.ID,
+		Roles:       memberEntity.GetRoleNames(),
+		Permissions: memberEntity.GetPermissionNames(),
 	})
 }
