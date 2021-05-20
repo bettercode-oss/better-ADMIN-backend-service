@@ -13,11 +13,13 @@ import (
 	"github.com/labstack/echo"
 	echomiddleware "github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/color"
-	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"os"
+	"time"
 )
 
 const (
@@ -29,6 +31,14 @@ const (
  / _ \/ -_)/ __// __// -_) / __/      / __ | / // / / /|_/ /  _/ /   /    / 
 /_.__/\__/ \__/ \__/ \__/ /_/        /_/ |_|/____/ /_/  /_/  /___/  /_/|_/  
 `
+)
+
+const (
+	EnvBetterAdminDbHost     = "BETTER_ADMIN_DB_HOST"
+	EnvBetterAdminDbDriver   = "BETTER_ADMIN_DB_DRIVER"
+	EnvBetterAdminDbName     = "BETTER_ADMIN_DB_NAME"
+	EnvBetterAdminDbUser     = "BETTER_ADMIN_DB_USER"
+	EnvBetterAdminDbPassword = "BETTER_ADMIN_DB_PASSWORD"
 )
 
 var (
@@ -43,7 +53,30 @@ func init() {
 	log.AddHook(filenameHook)
 	log.SetFormatter(&log.JSONFormatter{DisableHTMLEscape: true})
 
-	db, err := gorm.Open(sqlite.Open("account.db"), &gorm.Config{
+	var dialector gorm.Dialector
+	if len(os.Getenv(EnvBetterAdminDbHost)) > 0 &&
+		len(os.Getenv(EnvBetterAdminDbDriver)) > 0 &&
+		len(os.Getenv(EnvBetterAdminDbName)) > 0 &&
+		len(os.Getenv(EnvBetterAdminDbUser)) > 0 &&
+		len(os.Getenv(EnvBetterAdminDbPassword)) > 0 {
+
+		driver := os.Getenv(EnvBetterAdminDbDriver)
+		if driver != "mysql" {
+			panic("not supported database")
+		}
+
+		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
+			os.Getenv(EnvBetterAdminDbUser),
+			os.Getenv(EnvBetterAdminDbPassword),
+			os.Getenv(EnvBetterAdminDbHost),
+			os.Getenv(EnvBetterAdminDbName))
+		dialector = mysql.Open(dsn)
+	} else {
+		// 기본적으로 DB는 sqlite
+		dialector = sqlite.Open("account.db")
+	}
+
+	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 
@@ -51,7 +84,9 @@ func init() {
 		panic("Database Connection Error")
 	}
 
-	initializeDatabase(db)
+	if err := initializeDatabase(db); err != nil {
+		panic(fmt.Sprintf("Database initializeDatabase Error : %s", err.Error()))
+	}
 	gormDB = db
 }
 
@@ -66,27 +101,43 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT count(*) FROM permissions WHERE type= 'pre-define'").Scan(&permissionCount)
 
 	if permissionCount == 0 {
-		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"pre-define", "MANAGE_SYSTEM_SETTINGS", "시스템 설정(예. 두레이 로그인 등) 권한")
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "MANAGE_SYSTEM_SETTINGS", "시스템 설정(예. 두레이 로그인 등) 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 
-		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"pre-define", "MANAGE_MEMBERS", "멤버 관리 권한")
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "MANAGE_MEMBERS", "멤버 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 
-		db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"pre-define", "MANAGE_ACCESS_CONTROL", "접근 제어 관리 권한")
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "MANAGE_ACCESS_CONTROL", "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 	}
 
 	var roleCount int64
 	db.Raw("SELECT count(*) FROM roles WHERE type= 'pre-define'").Scan(&roleCount)
 
 	if roleCount == 0 {
-		db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"pre-define", "시스템 관리자", "")
-		db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1)")
+		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "시스템 관리자", "", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 
-		db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, datetime('now'), datetime('now'))",
-			"pre-define", "멤버 관리자", "")
-		db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3)")
+		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1)").Error; err != nil {
+			return err
+		}
+
+		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "멤버 관리자", "", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3)").Error; err != nil {
+			return err
+		}
 	}
 
 	// siteadm 계정 만들기
@@ -94,11 +145,15 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT sign_id FROM members WHERE sign_id = ?", "siteadm").Scan(&signId)
 
 	if len(signId) == 0 {
-		db.Exec("INSERT INTO members(type, sign_id, name, password, created_at, updated_at) values(?, ?, ?, ?, datetime('now'), datetime('now'))",
-			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG")
+		if err := db.Exec("INSERT INTO members(type, sign_id, name, password, created_at, updated_at) values(?, ?, ?, ?, ?, ?)",
+			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 
 		// 사이트 관리자에 사전 정의된 두가지 역할을 할당한다.(시스템 관리자, 멤버 관리자)
-		db.Exec("INSERT INTO member_roles(member_entity_id, role_entity_id) values(1, 1),(1, 2)")
+		if err := db.Exec("INSERT INTO member_roles(member_entity_id, role_entity_id) values(1, 1),(1, 2)").Error; err != nil {
+			return err
+		}
 	}
 
 	return nil
