@@ -1,0 +1,23 @@
+- id: 1
+  name: "베터코드 연구소"
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+- id: 3
+  name: "부서B"
+  parent_organization_id: 1
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+- id: 4
+  name: "부서C"
+  parent_organization_id: 3
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+- id: 5
+  name: "베터코드 연구소2"
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+- id: 2
+  name: "부서A"
+  parent_organization_id: 5
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')

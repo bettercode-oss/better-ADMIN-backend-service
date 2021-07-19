@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain/member"
+	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
 	"fmt"
@@ -14,7 +15,7 @@ type DatabaseFixture struct {
 
 func (DatabaseFixture) setUpDefault() {
 	fmt.Println("Set up database test fixture")
-	gormDB.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{})
+	gormDB.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{}, &organization.OrganizationEntity{})
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {
@@ -35,4 +36,5 @@ func (DatabaseFixture) setUpDefault() {
 	if err := fixtures.Load(); err != nil {
 		panic(err)
 	}
+	fmt.Println("End of database test fixture")
 }

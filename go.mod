@@ -20,6 +20,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasttemplate v1.2.1 // indirect
+	github.com/wesovilabs/koazee v0.0.5
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	gorm.io/driver/mysql v1.1.0
 	gorm.io/driver/sqlite v1.1.4

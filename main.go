@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/controllers"
 	"better-admin-backend-service/domain/member"
+	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/middlewares"
@@ -87,13 +88,20 @@ func init() {
 	if err := initializeDatabase(db); err != nil {
 		panic(fmt.Sprintf("Database initializeDatabase Error : %s", err.Error()))
 	}
+
+	sqlDB, err := db.DB()
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(10 * time.Minute)
+
 	gormDB = db
 }
 
 func initializeDatabase(db *gorm.DB) error {
 	fmt.Println(">>> InitializeDatabase")
 	// 테이블 생성
-	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{}); err != nil {
+	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{},
+		&rbac.RoleEntity{}, &organization.OrganizationEntity{}); err != nil {
 		return err
 	}
 
@@ -115,6 +123,11 @@ func initializeDatabase(db *gorm.DB) error {
 			"pre-define", "MANAGE_ACCESS_CONTROL", "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
+
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", "MANAGE_ORGANIZATION", "조직 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
 	}
 
 	var roleCount int64
@@ -131,11 +144,11 @@ func initializeDatabase(db *gorm.DB) error {
 		}
 
 		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
-			"pre-define", "멤버 관리자", "", time.Now(), time.Now()).Error; err != nil {
+			"pre-define", "조직/멤버 관리자", "", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3)").Error; err != nil {
+		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3),(2, 4)").Error; err != nil {
 			return err
 		}
 	}
@@ -176,6 +189,7 @@ func main() {
 	controllers.SiteController{}.Init(e.Group("/api/site"))
 	controllers.MemberController{}.Init(e.Group("/api/members"))
 	controllers.AccessControlController{}.Init(e.Group("/api/access-control"))
+	controllers.OrganizationController{}.Init(e.Group("/api/organizations"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")

@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
+	organiztion "better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
@@ -27,15 +29,20 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 	}
 
 	memberEntity, err := member.MemberService{}.GetMemberById(ctx.Request().Context(), userClaim.Id)
+	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx.Request().Context(), memberEntity)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
 
 	memberInformation := dtos.CurrentMember{
 		Id:          memberEntity.ID,
 		Type:        memberEntity.Type,
 		TypeName:    memberEntity.GetTypeName(),
 		Name:        memberEntity.Name,
-		Roles:       memberEntity.GetRoleNames(),
-		Permissions: memberEntity.GetPermissionNames(),
+		Roles:       memberAssignedAllRoleAndPermission.Roles,
+		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	}
+
 	return ctx.JSON(http.StatusOK, memberInformation)
 }
 
@@ -47,6 +54,15 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 
+	memberIds := make([]uint, 0)
+	for _, entity := range memberEntities {
+		memberIds = append(memberIds, entity.ID)
+	}
+
+	filters := map[string]interface{}{}
+	filters["memberIds"] = memberIds
+	organizationsOfMembers, err := organiztion.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
+
 	var members = make([]dtos.MemberInformation, 0)
 	for _, entity := range memberEntities {
 		var roles = make([]dtos.MemberRole, 0)
@@ -56,13 +72,36 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 				Name: memberRole.Name,
 			})
 		}
-		members = append(members, dtos.MemberInformation{
+		memberInformation := dtos.MemberInformation{
 			Id:          entity.ID,
 			Type:        entity.Type,
 			TypeName:    entity.GetTypeName(),
 			Name:        entity.Name,
 			MemberRoles: roles,
-		})
+		}
+
+		var memberOrganizations = make([]dtos.MemberOrganization, 0)
+		for _, organizationsOfMember := range organizationsOfMembers {
+			if organizationsOfMember.ExistMember(entity.ID) {
+				memberOrganization := dtos.MemberOrganization{
+					Id:   organizationsOfMember.ID,
+					Name: organizationsOfMember.Name,
+				}
+
+				var memberOrganizationRoles = make([]dtos.MemberOrganizationRole, 0)
+				for _, memberOrganizationRole := range organizationsOfMember.Roles {
+					memberOrganizationRoles = append(memberOrganizationRoles, dtos.MemberOrganizationRole{
+						Id:   memberOrganizationRole.ID,
+						Name: memberOrganizationRole.Name,
+					})
+				}
+
+				memberOrganization.Roles = memberOrganizationRoles
+				memberOrganizations = append(memberOrganizations, memberOrganization)
+			}
+		}
+		memberInformation.MemberOrganizations = memberOrganizations
+		members = append(members, memberInformation)
 	}
 
 	pageResult := dtos.PageResult{

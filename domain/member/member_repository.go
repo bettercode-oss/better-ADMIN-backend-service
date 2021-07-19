@@ -76,6 +76,14 @@ func (memberRepository) FindById(ctx context.Context, id uint) (MemberEntity, er
 func (memberRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]MemberEntity, int64, error) {
 	db := helpers.ContextHelper().GetDB(ctx).Model(&MemberEntity{})
 
+	if filters != nil {
+		for key, value := range filters {
+			if key == "memberIds" {
+				db.Where("id IN ?", value)
+			}
+		}
+	}
+
 	var entities = make([]MemberEntity, 0)
 	var totalCount int64
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).

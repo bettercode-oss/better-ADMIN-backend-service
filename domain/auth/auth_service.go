@@ -3,6 +3,7 @@ package auth
 import (
 	"better-admin-backend-service/adapters"
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
@@ -27,10 +28,15 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 		return
 	}
 
+	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
+	if err != nil {
+		return
+	}
+
 	token, err = security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
 		Id:          memberEntity.ID,
-		Roles:       memberEntity.GetRoleNames(),
-		Permissions: memberEntity.GetPermissionNames(),
+		Roles:       memberAssignedAllRoleAndPermission.Roles,
+		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	})
 	return
 }
@@ -71,18 +77,28 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 				return security.JwtToken{}, err
 			}
 
+			memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, newMemberEntity)
+			if err != nil {
+				return security.JwtToken{}, err
+			}
+
 			return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
 				Id:          newMemberEntity.ID,
-				Roles:       memberEntity.GetRoleNames(),
-				Permissions: memberEntity.GetPermissionNames(),
+				Roles:       memberAssignedAllRoleAndPermission.Roles,
+				Permissions: memberAssignedAllRoleAndPermission.Permissions,
 			})
 		}
 		return security.JwtToken{}, err
 	}
 
+	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
+	if err != nil {
+		return security.JwtToken{}, err
+	}
+
 	return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
 		Id:          memberEntity.ID,
-		Roles:       memberEntity.GetRoleNames(),
-		Permissions: memberEntity.GetPermissionNames(),
+		Roles:       memberAssignedAllRoleAndPermission.Roles,
+		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	})
 }
