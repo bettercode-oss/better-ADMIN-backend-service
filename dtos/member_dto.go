@@ -6,6 +6,7 @@ import (
 
 type MemberInformation struct {
 	Id                  uint                 `json:"id"`
+	SignId              string               `json:"signId"`
 	Type                string               `json:"type"`
 	TypeName            string               `json:"typeName"`
 	Name                string               `json:"name"`
@@ -49,4 +50,14 @@ type CurrentMember struct {
 type MemberAssignedAllRoleAndPermission struct {
 	Roles       []string
 	Permissions []string
+}
+
+type MemberSignUp struct {
+	SignId   string `json:"signId" validate:"required"`
+	Name     string `json:"name" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (m MemberSignUp) Validate(ctx echo.Context) error {
+	return ctx.Validate(m)
 }

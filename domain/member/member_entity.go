@@ -1,6 +1,7 @@
 package member
 
 import (
+	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
 	"context"
@@ -14,6 +15,8 @@ const (
 	TypeMemberSiteName   = "사이트"
 	TypeMemberDooray     = "dooray"
 	TypeMemberDoorayName = "두레이"
+	StatusMemberApplied  = "applied"
+	StatusMemberApproved = "approved"
 )
 
 type MemberEntity struct {
@@ -22,6 +25,7 @@ type MemberEntity struct {
 	SignId         string
 	Name           string
 	Password       string
+	Status         string
 	DoorayId       string
 	DoorayUserCode string
 	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
@@ -129,4 +133,45 @@ func (m MemberEntity) GetPermissionNames() []string {
 	}
 
 	return permissionNames
+}
+
+func (m *MemberEntity) Approve() error {
+	if m.Status == StatusMemberApproved {
+		return domain.ErrAlreadyApproved
+	}
+	m.Status = StatusMemberApproved
+	return nil
+}
+
+func (m MemberEntity) IsApproved() bool {
+	if m.Status == StatusMemberApproved {
+		return true
+	}
+	return false
+}
+
+func NewMemberEntityFromSignUp(signUp dtos.MemberSignUp) (MemberEntity, error) {
+	hashedPassword, err := MemberEntity{}.hashAndSalt(signUp.Password)
+	if err != nil {
+		return MemberEntity{}, err
+	}
+
+	return MemberEntity{
+		Type:     TypeMemberSite,
+		SignId:   signUp.SignId,
+		Name:     signUp.Name,
+		Password: hashedPassword,
+		Status:   StatusMemberApplied,
+	}, nil
+}
+
+func NewMemberEntityFromDoorayMember(doorayMember dtos.DoorayMember) MemberEntity {
+	// 두레이 사용자의 경우 이미 두레이를 통해 인증된 사용자 이기 때문에 상태를 '승인' 설정
+	return MemberEntity{
+		Type:           TypeMemberDooray,
+		DoorayId:       doorayMember.Id,
+		DoorayUserCode: doorayMember.UserCode,
+		Name:           doorayMember.Name,
+		Status:         StatusMemberApproved,
+	}
 }

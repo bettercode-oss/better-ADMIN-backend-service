@@ -81,6 +81,10 @@ func (memberRepository) FindAll(ctx context.Context, filters map[string]interfac
 			if key == "memberIds" {
 				db.Where("id IN ?", value)
 			}
+
+			if key == "status" {
+				db.Where("status = ?", value)
+			}
 		}
 	}
 

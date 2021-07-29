@@ -37,6 +37,11 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 		if err == domain.ErrNotFound || err == domain.ErrAuthentication {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
+
+		if err == domain.ErrUnApproved {
+			return ctx.JSON(http.StatusNotAcceptable, err.Error())
+		}
+
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 

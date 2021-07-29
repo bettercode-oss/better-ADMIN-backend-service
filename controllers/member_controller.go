@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
 	organiztion "better-admin-backend-service/domain/organization"
@@ -16,10 +17,12 @@ type MemberController struct {
 }
 
 func (controller MemberController) Init(g *echo.Group) {
+	g.POST("", controller.SignUpMember)
 	g.GET("/my", controller.GetCurrentMember, middlewares.CheckPermission([]string{"*"}))
 	g.GET("", controller.GetMembers, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
 	g.GET("/:id", controller.GetMember, middlewares.CheckPermission([]string{"*"}))
 	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
+	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
 }
 
 func (MemberController) GetCurrentMember(ctx echo.Context) error {
@@ -48,8 +51,13 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 
 func (MemberController) GetMembers(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
+	filters := map[string]interface{}{}
 
-	memberEntities, totalCount, err := member.MemberService{}.GetMembers(ctx.Request().Context(), nil, pageable)
+	if len(ctx.QueryParam("status")) > 0 {
+		filters["status"] = ctx.QueryParam("status")
+	}
+
+	memberEntities, totalCount, err := member.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -59,7 +67,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		memberIds = append(memberIds, entity.ID)
 	}
 
-	filters := map[string]interface{}{}
+	filters = map[string]interface{}{}
 	filters["memberIds"] = memberIds
 	organizationsOfMembers, err := organiztion.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
 
@@ -74,6 +82,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		}
 		memberInformation := dtos.MemberInformation{
 			Id:          entity.ID,
+			SignId:      entity.SignId,
 			Type:        entity.Type,
 			TypeName:    entity.GetTypeName(),
 			Name:        entity.Name,
@@ -162,4 +171,42 @@ func (MemberController) GetMember(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, memberInformation)
+}
+
+func (MemberController) SignUpMember(ctx echo.Context) error {
+	var memberSignUp dtos.MemberSignUp
+	if err := ctx.Bind(&memberSignUp); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if err := memberSignUp.Validate(ctx); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err := member.MemberService{}.SignUpMember(ctx.Request().Context(), memberSignUp)
+	if err != nil {
+		if err == domain.ErrDuplicated {
+			return ctx.JSON(http.StatusBadRequest, err.Error())
+		}
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return ctx.JSON(http.StatusOK, nil)
+}
+
+func (MemberController) ApproveMember(ctx echo.Context) error {
+	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err = member.MemberService{}.ApproveMember(ctx.Request().Context(), uint(memberId))
+	if err != nil {
+		if err == domain.ErrAlreadyApproved {
+			return ctx.JSON(http.StatusBadRequest, err.Error())
+		}
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return ctx.JSON(http.StatusOK, nil)
 }
