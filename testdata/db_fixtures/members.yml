@@ -3,11 +3,13 @@
   sign_id: "siteadm"
   name: "사이트 관리자"
   password: "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG"
+  status: "approved"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
 - id: 2
   type: "dooray"
   name: "유영모"
+  status: "approved"
   dooray_id: "11111"
   dooray_user_code: "2222"
   updated_at: RAW=datetime('now')
@@ -17,5 +19,14 @@
   sign_id: "ymyoo"
   name: "유영모2"
   password: "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG"
+  status: "approved"
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+- id: 4
+  type: "site"
+  sign_id: "ymyoo3"
+  name: "유영모3"
+  password: "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG"
+  status: "applied"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')

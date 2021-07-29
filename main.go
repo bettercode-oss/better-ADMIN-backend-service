@@ -158,8 +158,8 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT sign_id FROM members WHERE sign_id = ?", "siteadm").Scan(&signId)
 
 	if len(signId) == 0 {
-		if err := db.Exec("INSERT INTO members(type, sign_id, name, password, created_at, updated_at) values(?, ?, ?, ?, ?, ?)",
-			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG", time.Now(), time.Now()).Error; err != nil {
+		if err := db.Exec("INSERT INTO members(type, sign_id, name, password, status, created_at, updated_at) values(?, ?, ?, ?, ?, ?, ?)",
+			"site", "siteadm", "사이트 관리자", "$2a$04$7Ca1ybGc4yFkcBnzK1C0qevHy/LSD7PuBbPQTZEs6tiNM4hAxSYiG", "approved", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 

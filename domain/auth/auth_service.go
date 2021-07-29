@@ -28,6 +28,12 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 		return
 	}
 
+	approved := memberEntity.IsApproved()
+	if approved == false {
+		err = domain.ErrUnApproved
+		return
+	}
+
 	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
 	if err != nil {
 		return
@@ -66,12 +72,7 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 	memberEntity, err := memberService.GetMemberByDoorayId(ctx, doorayMember.Id)
 	if err != nil {
 		if err == domain.ErrNotFound {
-			newMemberEntity := member.MemberEntity{
-				Type:           member.TypeMemberDooray,
-				DoorayId:       doorayMember.Id,
-				DoorayUserCode: doorayMember.UserCode,
-				Name:           doorayMember.Name,
-			}
+			newMemberEntity := member.NewMemberEntityFromDoorayMember(doorayMember)
 
 			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
 				return security.JwtToken{}, err

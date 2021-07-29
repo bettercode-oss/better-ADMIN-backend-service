@@ -1,6 +1,7 @@
 package member
 
 import (
+	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
 	"context"
 )
@@ -45,4 +46,38 @@ func (MemberService) AssignRole(ctx context.Context, memberId uint, assignRole d
 
 func (MemberService) GetMember(ctx context.Context, memberId uint) (MemberEntity, error) {
 	return memberRepository{}.FindById(ctx, memberId)
+}
+
+func (MemberService) SignUpMember(ctx context.Context, signUp dtos.MemberSignUp) error {
+	repository := memberRepository{}
+	_, err := repository.FindBySignId(ctx, signUp.SignId)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			// signId 가 중복이 없을 때만 가입
+			newMember, err := NewMemberEntityFromSignUp(signUp)
+			if err != nil {
+				return err
+			}
+
+			return repository.Create(ctx, &newMember)
+		}
+
+		return err
+	}
+
+	return domain.ErrDuplicated
+}
+
+func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
+	repository := memberRepository{}
+	memberEntity, err := repository.FindById(ctx, memberId)
+	if err != nil {
+		return err
+	}
+
+	if err := memberEntity.Approve(); err != nil {
+		return err
+	}
+
+	return repository.Save(ctx, &memberEntity)
 }
