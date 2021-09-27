@@ -17,3 +17,11 @@ type DoorayMember struct {
 	Name                 string `json:"name"`
 	ExternalEmailAddress string `json:"externalEmailAddress"`
 }
+
+type GoogleMember struct {
+	Id      string `json:"id"`
+	Email   string `json:"email"`
+	Name    string `json:"name"`
+	Picture string `json:"picture"`
+	Hd      string `json:"hd"`
+}

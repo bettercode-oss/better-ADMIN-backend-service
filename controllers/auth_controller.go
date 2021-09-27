@@ -5,6 +5,7 @@ import (
 	"better-admin-backend-service/domain/auth"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/security"
+	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
 	"time"
@@ -16,6 +17,7 @@ type AuthController struct {
 func (controller AuthController) Init(g *echo.Group) {
 	g.POST("", controller.AuthWithSignIdPassword)
 	g.POST("/dooray", controller.AuthWithDoorayIdPassword)
+	g.GET("/google-workspace", controller.AuthWithGoogleWorkspaceAccount)
 	g.GET("/check", controller.CheckAuth)
 	g.POST("/logout", controller.Logout)
 	g.POST("/token/refresh", controller.RefreshAccessToken)
@@ -148,4 +150,35 @@ func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) erro
 	result := map[string]string{}
 	result["accessToken"] = jwtToken.AccessToken
 	return ctx.JSON(http.StatusOK, result)
+}
+
+func (AuthController) AuthWithGoogleWorkspaceAccount(ctx echo.Context) error {
+	code := ctx.QueryParam("code")
+	redirect := ctx.QueryParam("state")
+
+	jwtToken, err := auth.AuthService{}.AuthWithGoogleWorkspaceAccount(ctx.Request().Context(), code)
+	if err != nil {
+		if e, ok := err.(*domain.ErrInvalidGoogleWorkspaceAccount); ok {
+			return ctx.Redirect(http.StatusFound, redirect+fmt.Sprintf("&error=%v 로 끝나는 메일 주소만 사용 가능 합니다.", e.Domain))
+		}
+
+		return ctx.Redirect(http.StatusFound, redirect+"&error=server-internal-error")
+	}
+
+	refreshToken, err := ctx.Cookie("refreshToken")
+	if err != nil || len(refreshToken.Value) == 0 {
+		cookie := new(http.Cookie)
+		cookie.Name = "refreshToken"
+		cookie.Value = jwtToken.RefreshToken
+		cookie.HttpOnly = true
+		cookie.Path = "/"
+		ctx.SetCookie(cookie)
+	} else {
+		refreshToken.Value = jwtToken.RefreshToken
+		refreshToken.HttpOnly = true
+		refreshToken.Path = "/"
+		ctx.SetCookie(refreshToken)
+	}
+
+	return ctx.Redirect(http.StatusFound, redirect+"&accessToken="+jwtToken.AccessToken)
 }

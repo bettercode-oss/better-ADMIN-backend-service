@@ -45,6 +45,7 @@ type CurrentMember struct {
 	Name        string   `json:"name"`
 	Roles       []string `json:"roles"`
 	Permissions []string `json:"permissions"`
+	Picture     string   `json:"picture"`
 }
 
 type MemberAssignedAllRoleAndPermission struct {

@@ -108,3 +108,21 @@ func (memberRepository) Save(ctx context.Context, entity *MemberEntity) error {
 
 	return db.Save(entity).Error
 }
+
+func (memberRepository) FindByGoogleId(ctx context.Context, googleId string) (MemberEntity, error) {
+	var memberEntity MemberEntity
+
+	db := helpers.ContextHelper().GetDB(ctx)
+
+	if err := db.Where(&MemberEntity{GoogleId: googleId}).
+		Preload("Roles.Permissions").Preload(clause.Associations).
+		First(&memberEntity).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return memberEntity, domain.ErrNotFound
+		}
+
+		return memberEntity, err
+	}
+
+	return memberEntity, nil
+}

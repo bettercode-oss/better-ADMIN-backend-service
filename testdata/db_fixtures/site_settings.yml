@@ -1,5 +1,11 @@
 - id: 1
   key: "dooray-login"
-  value: {"used":true,"domain":"bettercode","authorizationToken":"test token...."}
+  value: { "used": true,"domain": "bettercode","authorizationToken": "test token...." }
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+- id: 2
+  key: "google-workspace-login"
+  value: { "used": true, "domain": "bettercode.kr", "clientId": "test-client-id", "clientSecret": "test-secret", "redirectUri": "http://localhost:2016" }
+  updated_at: RAW=datetime('now')
+  created_at: RAW=datetime('now')
+

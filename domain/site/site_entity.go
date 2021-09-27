@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	SettingKeyDoorayLogin = "dooray-login"
+	SettingKeyDoorayLogin          = "dooray-login"
+	SettingKeyGoogleWorkspaceLogin = "google-workspace-login"
 )
 
 type SettingEntity struct {

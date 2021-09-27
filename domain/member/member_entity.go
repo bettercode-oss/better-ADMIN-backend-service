@@ -15,6 +15,8 @@ const (
 	TypeMemberSiteName   = "사이트"
 	TypeMemberDooray     = "dooray"
 	TypeMemberDoorayName = "두레이"
+	TypeMemberGoogle     = "google"
+	TypeMemberGoogleName = "구글"
 	StatusMemberApplied  = "applied"
 	StatusMemberApproved = "approved"
 )
@@ -28,6 +30,9 @@ type MemberEntity struct {
 	Status         string
 	DoorayId       string
 	DoorayUserCode string
+	GoogleId       string
+	GoogleMail     string
+	Picture        string
 	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
@@ -77,6 +82,10 @@ func (m MemberEntity) GetTypeName() string {
 
 	if m.Type == TypeMemberDooray {
 		return TypeMemberDoorayName
+	}
+
+	if m.Type == TypeMemberGoogle {
+		return TypeMemberGoogleName
 	}
 
 	return ""
@@ -173,5 +182,17 @@ func NewMemberEntityFromDoorayMember(doorayMember dtos.DoorayMember) MemberEntit
 		DoorayUserCode: doorayMember.UserCode,
 		Name:           doorayMember.Name,
 		Status:         StatusMemberApproved,
+	}
+}
+
+func NewMemberEntityFromGoogleMember(googleMember dtos.GoogleMember) MemberEntity {
+	// 구글 워크스페이스 사용자의 경우 이미 구글 워크스페이스를 통해 인증된 사용자 이기 때문에 상태를 '승인' 설정
+	return MemberEntity{
+		Type:       TypeMemberGoogle,
+		GoogleId:   googleMember.Id,
+		GoogleMail: googleMember.Email,
+		Name:       googleMember.Name,
+		Picture:    googleMember.Picture,
+		Status:     StatusMemberApproved,
 	}
 }

@@ -9,6 +9,11 @@ var Config = struct {
 	Dooray    struct {
 		LdapDialUrl string
 	}
+	GoogleOAuth struct {
+		OAuthUri string
+		AuthUri  string
+		TokenUri string
+	}
 }{}
 
 func InitConfig(cfg string) {

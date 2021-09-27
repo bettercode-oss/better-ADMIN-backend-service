@@ -103,3 +103,67 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	})
 }
+
+func (AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
+	googleWorkspaceLoginSetting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyGoogleWorkspaceLogin)
+	if err != nil {
+		return security.JwtToken{}, err
+	}
+
+	var settings dtos.GoogleWorkspaceLoginSetting
+	if err = mapstructure.Decode(googleWorkspaceLoginSetting, &settings); err != nil {
+		return security.JwtToken{}, err
+	}
+
+	if *settings.Used == false {
+		err = errors.New("not supported google workspace login")
+		return security.JwtToken{}, err
+	}
+
+	googleMember, err := adapters.GoogleOAuthAdapter{}.Authenticate(code, settings)
+
+	if err != nil {
+		return security.JwtToken{}, err
+	}
+
+	if googleMember.Hd != settings.Domain {
+		return security.JwtToken{}, &domain.ErrInvalidGoogleWorkspaceAccount{
+			Domain: settings.Domain,
+		}
+	}
+
+	memberService := member.MemberService{}
+	memberEntity, err := memberService.GetMemberByGoogleId(ctx, googleMember.Id)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			newMemberEntity := member.NewMemberEntityFromGoogleMember(googleMember)
+
+			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
+				return security.JwtToken{}, err
+			}
+
+			memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, newMemberEntity)
+			if err != nil {
+				return security.JwtToken{}, err
+			}
+
+			return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
+				Id:          newMemberEntity.ID,
+				Roles:       memberAssignedAllRoleAndPermission.Roles,
+				Permissions: memberAssignedAllRoleAndPermission.Permissions,
+			})
+		}
+		return security.JwtToken{}, err
+	}
+
+	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
+	if err != nil {
+		return security.JwtToken{}, err
+	}
+
+	return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
+		Id:          memberEntity.ID,
+		Roles:       memberAssignedAllRoleAndPermission.Roles,
+		Permissions: memberAssignedAllRoleAndPermission.Permissions,
+	})
+}
