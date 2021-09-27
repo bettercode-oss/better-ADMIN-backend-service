@@ -44,6 +44,7 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 		Name:        memberEntity.Name,
 		Roles:       memberAssignedAllRoleAndPermission.Roles,
 		Permissions: memberAssignedAllRoleAndPermission.Permissions,
+		Picture:     memberEntity.Picture,
 	}
 
 	return ctx.JSON(http.StatusOK, memberInformation)

@@ -2,5 +2,10 @@
   "JwtSecret": "betterAdminSecret",
   "Dooray": {
     "LdapDialUrl": "ldaps://ldap.dooray.com:636"
+  },
+  "GoogleOAuth": {
+    "OAuthUri": "https://accounts.google.com/o/oauth2/auth",
+    "AuthUri": "https://www.googleapis.com/oauth2/v1/userinfo",
+    "TokenUri": "https://oauth2.googleapis.com/token"
   }
 }

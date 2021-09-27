@@ -81,3 +81,7 @@ func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
 
 	return repository.Save(ctx, &memberEntity)
 }
+
+func (MemberService) GetMemberByGoogleId(ctx context.Context, googleId string) (MemberEntity, error) {
+	return memberRepository{}.FindByGoogleId(ctx, googleId)
+}
