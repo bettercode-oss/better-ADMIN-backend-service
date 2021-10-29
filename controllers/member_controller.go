@@ -19,10 +19,10 @@ type MemberController struct {
 func (controller MemberController) Init(g *echo.Group) {
 	g.POST("", controller.SignUpMember)
 	g.GET("/my", controller.GetCurrentMember, middlewares.CheckPermission([]string{"*"}))
-	g.GET("", controller.GetMembers, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
+	g.GET("", controller.GetMembers, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 	g.GET("/:id", controller.GetMember, middlewares.CheckPermission([]string{"*"}))
-	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
-	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{"MANAGE_MEMBERS"}))
+	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
+	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 }
 
 func (MemberController) GetCurrentMember(ctx echo.Context) error {

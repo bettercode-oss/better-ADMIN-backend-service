@@ -9,6 +9,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.3.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-testfixtures/testfixtures/v3 v3.5.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgx/v4 v4.10.1 // indirect
 	github.com/jinzhu/configor v1.2.1
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
