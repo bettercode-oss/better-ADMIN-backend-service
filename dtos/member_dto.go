@@ -9,6 +9,7 @@ type MemberInformation struct {
 	SignId              string               `json:"signId"`
 	Type                string               `json:"type"`
 	TypeName            string               `json:"typeName"`
+	CandidateId         string               `json:"candidateId"`
 	Name                string               `json:"name"`
 	MemberRoles         []MemberRole         `json:"roles"`
 	MemberOrganizations []MemberOrganization `json:"organizations"`

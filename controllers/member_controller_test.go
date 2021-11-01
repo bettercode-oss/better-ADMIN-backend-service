@@ -86,6 +86,7 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 			map[string]interface{}{
 				"id":            float64(4),
 				"signId":        "ymyoo3",
+				"candidateId":   "ymyoo3",
 				"type":          "site",
 				"typeName":      "사이트",
 				"name":          "유영모3",
