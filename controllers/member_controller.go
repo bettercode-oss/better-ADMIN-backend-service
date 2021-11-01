@@ -84,6 +84,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		memberInformation := dtos.MemberInformation{
 			Id:          entity.ID,
 			SignId:      entity.SignId,
+			CandidateId: entity.GetCandidateId(),
 			Type:        entity.Type,
 			TypeName:    entity.GetTypeName(),
 			Name:        entity.Name,

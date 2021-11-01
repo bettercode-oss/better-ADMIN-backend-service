@@ -159,6 +159,18 @@ func (m MemberEntity) IsApproved() bool {
 	return false
 }
 
+func (m MemberEntity) GetCandidateId() string {
+	if m.Type == TypeMemberSite {
+		return m.SignId
+	} else if m.Type == TypeMemberDooray {
+		return m.DoorayUserCode
+	} else if m.Type == TypeMemberGoogle {
+		return m.GoogleMail
+	} else {
+		return ""
+	}
+}
+
 func NewMemberEntityFromSignUp(signUp dtos.MemberSignUp) (MemberEntity, error) {
 	hashedPassword, err := MemberEntity{}.hashAndSalt(signUp.Password)
 	if err != nil {
