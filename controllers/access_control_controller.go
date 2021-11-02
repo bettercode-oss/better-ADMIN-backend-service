@@ -14,14 +14,22 @@ type AccessControlController struct {
 }
 
 func (controller AccessControlController) Init(g *echo.Group) {
-	g.POST("/permissions", controller.CreatePermission, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.GET("/permissions", controller.GetPermissions, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.PUT("/permissions/:permissionId", controller.UpdatePermission, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.DELETE("/permissions/:permissionId", controller.DeletePermission, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.POST("/roles", controller.CreateRole, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.GET("/roles", controller.GetRoles, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.PUT("/roles/:roleId", controller.UpdateRole, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
-	g.DELETE("/roles/:roleId", controller.DeleteRole, middlewares.CheckPermission([]string{"MANAGE_ACCESS_CONTROL"}))
+	g.POST("/permissions", controller.CreatePermission,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.GET("/permissions", controller.GetPermissions,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.PUT("/permissions/:permissionId", controller.UpdatePermission,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.DELETE("/permissions/:permissionId", controller.DeletePermission,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.POST("/roles", controller.CreateRole,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.GET("/roles", controller.GetRoles,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.PUT("/roles/:roleId", controller.UpdateRole,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.DELETE("/roles/:roleId", controller.DeleteRole,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 }
 
 func (AccessControlController) CreatePermission(ctx echo.Context) error {

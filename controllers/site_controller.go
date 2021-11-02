@@ -15,10 +15,14 @@ type SiteController struct {
 
 func (controller SiteController) Init(g *echo.Group) {
 	g.GET("/settings", controller.GetSettingsSummary)
-	g.PUT("/settings/dooray-login", controller.SetDoorayLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
-	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
-	g.GET("/settings/google-workspace-login", controller.GetGoogleWorkspaceLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
-	g.PUT("/settings/google-workspace-login", controller.SetGoogleWorkspaceLoginSetting, middlewares.CheckPermission([]string{"MANAGE_SYSTEM_SETTINGS"}))
+	g.PUT("/settings/dooray-login", controller.SetDoorayLoginSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.GET("/settings/google-workspace-login", controller.GetGoogleWorkspaceLoginSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.PUT("/settings/google-workspace-login", controller.SetGoogleWorkspaceLoginSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
 }
 
 func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {

@@ -16,7 +16,6 @@ func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=2&status=approved", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
 

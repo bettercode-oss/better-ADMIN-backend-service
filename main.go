@@ -1,15 +1,19 @@
 package main
 
 import (
+	"better-admin-backend-service/adapters"
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/controllers"
+	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
+	"better-admin-backend-service/domain/webhook"
 	"better-admin-backend-service/middlewares"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/websocket"
 	"github.com/keepeye/logrus-filename"
 	"github.com/labstack/echo"
 	echomiddleware "github.com/labstack/echo/middleware"
@@ -19,6 +23,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"net/http"
 	"os"
 	"time"
 )
@@ -43,7 +48,10 @@ const (
 )
 
 var (
-	gormDB *gorm.DB
+	gormDB   *gorm.DB
+	upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
+		return true
+	}}
 )
 
 func init() {
@@ -101,7 +109,8 @@ func initializeDatabase(db *gorm.DB) error {
 	fmt.Println(">>> InitializeDatabase")
 	// 테이블 생성
 	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{},
-		&rbac.RoleEntity{}, &organization.OrganizationEntity{}); err != nil {
+		&rbac.RoleEntity{}, &organization.OrganizationEntity{},
+		&webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{}); err != nil {
 		return err
 	}
 
@@ -110,22 +119,27 @@ func initializeDatabase(db *gorm.DB) error {
 
 	if permissionCount == 0 {
 		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
-			"pre-define", "MANAGE_SYSTEM_SETTINGS", "시스템 설정(예. 두레이 로그인 등) 권한", time.Now(), time.Now()).Error; err != nil {
+			"pre-define", domain.PermissionManageSystemSettings, "시스템 설정(예. 두레이 로그인 등) 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
-			"pre-define", "MANAGE_MEMBERS", "멤버 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			"pre-define", domain.PermissionManageMembers, "멤버 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
-			"pre-define", "MANAGE_ACCESS_CONTROL", "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			"pre-define", domain.PermissionManageAccessControl, "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
-			"pre-define", "MANAGE_ORGANIZATION", "조직 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			"pre-define", domain.PermissionManageOrganization, "조직 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+			"pre-define", domain.PermissionNoteWebHooks, "웹훅 전송 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 	}
@@ -185,11 +199,13 @@ func main() {
 	e.Use(middlewares.JwtToken())
 	e.HideBanner = true
 
+	e.GET("/ws/:id", connectWebSocket)
 	controllers.AuthController{}.Init(e.Group("/api/auth"))
 	controllers.SiteController{}.Init(e.Group("/api/site"))
 	controllers.MemberController{}.Init(e.Group("/api/members"))
 	controllers.AccessControlController{}.Init(e.Group("/api/access-control"))
 	controllers.OrganizationController{}.Init(e.Group("/api/organizations"))
+	controllers.WebHookController{}.Init(e.Group("/api/web-hooks"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")
@@ -201,4 +217,16 @@ type CustomValidator struct {
 
 func (cv *CustomValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
+}
+
+func connectWebSocket(ctx echo.Context) error {
+	ws, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	if err != nil {
+		return err
+	}
+
+	webSocketId := ctx.Param("id")
+	adapters.WebSocketAdapter().AddConnection(webSocketId, ws)
+
+	return nil
 }

@@ -49,6 +49,26 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	}, nil
 }
 
+func (JwtAuthentication) GenerateJwtAccessTokenNeverExpired(claim UserClaim) (string, error) {
+	claimMap, err := claim.ConvertMap()
+	if err != nil {
+		return "", err
+	}
+
+	accessTokenClaims := jwt.MapClaims{}
+	for key, value := range claimMap {
+		accessTokenClaims[key] = value
+	}
+
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims).SignedString([]byte(config.Config.JwtSecret))
+
+	if err != nil {
+		return "", err
+	}
+
+	return accessToken, nil
+}
+
 func (JwtAuthentication) ConvertTokenUserClaim(token string) (*UserClaim, error) {
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) { return []byte(config.Config.JwtSecret), nil })
 

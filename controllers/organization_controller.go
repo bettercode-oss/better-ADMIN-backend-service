@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
@@ -13,13 +14,20 @@ type OrganizationController struct {
 }
 
 func (controller OrganizationController) Init(g *echo.Group) {
-	g.POST("", controller.CreateOrganization, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.GET("", controller.GetOrganizations, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.PUT("/:organizationId/name", controller.ChangeOrganizationName, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.PUT("/:organizationId/change-position", controller.ChangePosition, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.PUT("/:organizationId/assign-roles", controller.AssignRoles, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.PUT("/:organizationId/assign-members", controller.AssignMembers, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
-	g.DELETE("/:organizationId", controller.DeleteOrganization, middlewares.CheckPermission([]string{"MANAGE_ORGANIZATION"}))
+	g.POST("", controller.CreateOrganization,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.GET("", controller.GetOrganizations,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.PUT("/:organizationId/name", controller.ChangeOrganizationName,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.PUT("/:organizationId/change-position", controller.ChangePosition,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.PUT("/:organizationId/assign-roles", controller.AssignRoles,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.PUT("/:organizationId/assign-members", controller.AssignMembers,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.DELETE("/:organizationId", controller.DeleteOrganization,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
 }
 
 func (controller OrganizationController) CreateOrganization(ctx echo.Context) error {
