@@ -115,9 +115,9 @@ func TestWebHookController_GetWebHook(t *testing.T) {
 		"description": "...",
 		"webHookCallSpec": map[string]interface{}{
 			"httpRequestMethod": "POST",
-			"url":               "http://example.com/api/web-hooks/3",
+			"url":               "http://example.com/api/web-hooks/3/note",
 			"accessToken":       "test-access-tokens3",
-			"sampleRequest":     "curl --header \"Content-Type: application/json\" --header \"authorization: Bearer test-access-tokens3\" --request POST --data '{\"text\":\"테스트 메시지 입니다.\"}' http://example.com/api/web-hooks/3",
+			"sampleRequest":     "curl -X POST http://example.com/api/web-hooks/3/note -H \"Content-Type: application/json\" -H \"Authorization: Bearer test-access-tokens3\" -d '{\"text\":\"테스트 메시지 입니다.\"}'",
 		},
 	}
 
