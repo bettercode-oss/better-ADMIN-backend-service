@@ -6,6 +6,7 @@ import (
 	"better-admin-backend-service/helpers"
 	"context"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -85,11 +86,26 @@ func (memberRepository) FindAll(ctx context.Context, filters map[string]interfac
 			if key == "status" {
 				db.Where("status = ?", value)
 			}
+
+			if key == "name" {
+				db.Where("name LIKE ?", fmt.Sprintf("%%%v%%", value))
+			}
+
+			if key == "types" {
+				db.Where("type IN ?", value)
+			}
+
+			if key == "roleIds" {
+				// member_roles 테이블을 조인하여 members 테이블 조회 시 필터링 한다.
+				db.Joins("INNER JOIN member_roles ON member_roles.member_entity_id = members.id").
+					Where("member_roles.role_entity_id IN ?", value)
+			}
 		}
 	}
 
 	var entities = make([]MemberEntity, 0)
 	var totalCount int64
+
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).
 		Preload("Roles.Permissions").Preload(clause.Associations).
 		Find(&entities).Error; err != nil {

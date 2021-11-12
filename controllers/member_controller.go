@@ -5,12 +5,14 @@ import (
 	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
 	organiztion "better-admin-backend-service/domain/organization"
+	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type MemberController struct {
@@ -23,6 +25,7 @@ func (controller MemberController) Init(g *echo.Group) {
 	g.GET("/:id", controller.GetMember, middlewares.CheckPermission([]string{"*"}))
 	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
+	g.GET("/search-filters", controller.GetSearchFilters, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 }
 
 func (MemberController) GetCurrentMember(ctx echo.Context) error {
@@ -56,6 +59,18 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 
 	if len(ctx.QueryParam("status")) > 0 {
 		filters["status"] = ctx.QueryParam("status")
+	}
+
+	if len(ctx.QueryParam("name")) > 0 {
+		filters["name"] = ctx.QueryParam("name")
+	}
+
+	if len(ctx.QueryParam("types")) > 0 {
+		filters["types"] = strings.Split(ctx.QueryParam("types"), ",")
+	}
+
+	if len(ctx.QueryParam("roleIds")) > 0 {
+		filters["roleIds"] = strings.Split(ctx.QueryParam("roleIds"), ",")
 	}
 
 	memberEntities, totalCount, err := member.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
@@ -211,4 +226,47 @@ func (MemberController) ApproveMember(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
+}
+
+func (MemberController) GetSearchFilters(ctx echo.Context) error {
+	filters := make([]dtos.SearchFilter, 0)
+
+	memberTypeSearchFilter := dtos.SearchFilter{
+		Name: "type",
+		Filters: []dtos.Filter{
+			{
+				Text:  member.TypeMemberSiteName,
+				Value: member.TypeMemberSite,
+			},
+			{
+				Text:  member.TypeMemberDoorayName,
+				Value: member.TypeMemberDooray,
+			},
+			{
+				Text:  member.TypeMemberGoogleName,
+				Value: member.TypeMemberGoogle,
+			},
+		},
+	}
+	filters = append(filters, memberTypeSearchFilter)
+
+	allRoles, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, dtos.Pageable{Page: 0})
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	roleSearchFilter := dtos.SearchFilter{
+		Name: "role",
+	}
+	roleFilters := make([]dtos.Filter, 0)
+	for _, role := range allRoles {
+		roleFilters = append(roleFilters, dtos.Filter{
+			Text:  role.Name,
+			Value: strconv.FormatUint(uint64(role.ID), 10),
+		})
+	}
+	roleSearchFilter.Filters = roleFilters
+	filters = append(filters, roleSearchFilter)
+
+	return ctx.JSON(http.StatusOK, filters)
 }

@@ -66,7 +66,6 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=applied", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
 
@@ -94,6 +93,291 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 			},
 		},
 		"totalCount": float64(1),
+	}
+
+	assert.Equal(t, expected, resp)
+}
+
+func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&name=유", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(MemberController{}.GetMembers, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var resp interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(2),
+				"signId":      "",
+				"type":        "dooray",
+				"typeName":    "두레이",
+				"candidateId": "2222",
+				"name":        "유영모",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MEMBER MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(3),
+				"signId":      "ymyoo",
+				"type":        "site",
+				"typeName":    "사이트",
+				"candidateId": "ymyoo",
+				"name":        "유영모2",
+				"roles":       []interface{}{},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(4),
+						"name": "부서C",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+						},
+					},
+				},
+			},
+		},
+		"totalCount": float64(2),
+	}
+
+	assert.Equal(t, expected, resp)
+}
+
+func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&types=dooray,site", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(MemberController{}.GetMembers, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var resp interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(1),
+				"signId":      "siteadm",
+				"type":        "site",
+				"typeName":    "사이트",
+				"candidateId": "siteadm",
+				"name":        "사이트 관리자",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(2),
+				"signId":      "",
+				"type":        "dooray",
+				"typeName":    "두레이",
+				"candidateId": "2222",
+				"name":        "유영모",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MEMBER MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(3),
+				"signId":      "ymyoo",
+				"type":        "site",
+				"typeName":    "사이트",
+				"candidateId": "ymyoo",
+				"name":        "유영모2",
+				"roles":       []interface{}{},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(4),
+						"name": "부서C",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+						},
+					},
+				},
+			},
+		},
+		"totalCount": float64(3),
+	}
+
+	assert.Equal(t, expected, resp)
+}
+
+func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(MemberController{}.GetMembers, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var resp interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(1),
+				"signId":      "siteadm",
+				"type":        "site",
+				"typeName":    "사이트",
+				"candidateId": "siteadm",
+				"name":        "사이트 관리자",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(2),
+				"signId":      "",
+				"type":        "dooray",
+				"typeName":    "두레이",
+				"candidateId": "2222",
+				"name":        "유영모",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MEMBER MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+		},
+		"totalCount": float64(2),
 	}
 
 	assert.Equal(t, expected, resp)
@@ -257,4 +541,62 @@ func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
 	// then
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestMemberController_GetSearchFilters(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/search-filters", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(MemberController{}.GetSearchFilters, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var resp interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+
+	expected := []interface{}{
+		map[string]interface{}{
+			"name": "type",
+			"filters": []interface{}{
+				map[string]interface{}{
+					"text":  "사이트",
+					"value": "site",
+				},
+				map[string]interface{}{
+					"text":  "두레이",
+					"value": "dooray",
+				},
+				map[string]interface{}{
+					"text":  "구글",
+					"value": "google",
+				},
+			},
+		},
+		map[string]interface{}{
+			"name": "role",
+			"filters": []interface{}{
+				map[string]interface{}{
+					"text":  "SYSTEM MANAGER",
+					"value": "1",
+				},
+				map[string]interface{}{
+					"text":  "MEMBER MANAGER",
+					"value": "2",
+				},
+				map[string]interface{}{
+					"text":  "테스트 관리자",
+					"value": "3",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expected, resp)
 }
