@@ -90,6 +90,7 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 				"name":          "유영모3",
 				"roles":         []interface{}{},
 				"organizations": []interface{}{},
+				"createdAt":     "1982-01-04T00:00:00Z",
 			},
 		},
 		"totalCount": float64(1),
@@ -125,6 +126,7 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 				"typeName":    "두레이",
 				"candidateId": "2222",
 				"name":        "유영모",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -159,6 +161,7 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 				"typeName":    "사이트",
 				"candidateId": "ymyoo",
 				"name":        "유영모2",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles":       []interface{}{},
 				"organizations": []interface{}{
 					map[string]interface{}{
@@ -207,6 +210,7 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 				"typeName":    "사이트",
 				"candidateId": "siteadm",
 				"name":        "사이트 관리자",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -237,6 +241,7 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 				"typeName":    "두레이",
 				"candidateId": "2222",
 				"name":        "유영모",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -271,6 +276,7 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 				"typeName":    "사이트",
 				"candidateId": "ymyoo",
 				"name":        "유영모2",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles":       []interface{}{},
 				"organizations": []interface{}{
 					map[string]interface{}{
@@ -319,6 +325,7 @@ func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
 				"typeName":    "사이트",
 				"candidateId": "siteadm",
 				"name":        "사이트 관리자",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -349,6 +356,7 @@ func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
 				"typeName":    "두레이",
 				"candidateId": "2222",
 				"name":        "유영모",
+				"createdAt":   "1982-01-04T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -402,7 +410,7 @@ func TestMemberController_AssignRoles(t *testing.T) {
 	handleWithFilter(MemberController{}.AssignRole, ctx)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
 func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
@@ -424,7 +432,7 @@ func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
 	handleWithFilter(MemberController{}.AssignRole, ctx)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
 func TestMemberController_GetMember(t *testing.T) {
@@ -479,7 +487,7 @@ func TestMemberController_SignUpMember(t *testing.T) {
 
 	// then
 	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusCreated, rec.Code)
 }
 
 func TestMemberController_SignUpMember_아이디_중복(t *testing.T) {
@@ -521,7 +529,7 @@ func TestMemberController_ApproveMember(t *testing.T) {
 
 	// then
 	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
 func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
@@ -599,4 +607,23 @@ func TestMemberController_GetSearchFilters(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, resp)
+}
+
+func TestMemberController_RejectMember(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/rejected", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("id")
+	ctx.SetParamValues("4")
+
+	// when
+	handleWithFilter(MemberController{}.RejectMember, ctx)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }

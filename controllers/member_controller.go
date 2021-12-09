@@ -25,6 +25,7 @@ func (controller MemberController) Init(g *echo.Group) {
 	g.GET("/:id", controller.GetMember, middlewares.CheckPermission([]string{"*"}))
 	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
+	g.PUT("/:id/rejected", controller.RejectMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 	g.GET("/search-filters", controller.GetSearchFilters, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
 }
 
@@ -104,6 +105,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 			TypeName:    entity.GetTypeName(),
 			Name:        entity.Name,
 			MemberRoles: roles,
+			CreatedAt:   entity.CreatedAt,
 		}
 
 		var memberOrganizations = make([]dtos.MemberOrganization, 0)
@@ -158,7 +160,7 @@ func (MemberController) AssignRole(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	return ctx.NoContent(http.StatusNoContent)
 }
 
 func (MemberController) GetMember(ctx echo.Context) error {
@@ -208,7 +210,7 @@ func (MemberController) SignUpMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	return ctx.JSON(http.StatusCreated, nil)
 }
 
 func (MemberController) ApproveMember(ctx echo.Context) error {
@@ -225,7 +227,7 @@ func (MemberController) ApproveMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	return ctx.NoContent(http.StatusNoContent)
 }
 
 func (MemberController) GetSearchFilters(ctx echo.Context) error {
@@ -269,4 +271,21 @@ func (MemberController) GetSearchFilters(ctx echo.Context) error {
 	filters = append(filters, roleSearchFilter)
 
 	return ctx.JSON(http.StatusOK, filters)
+}
+
+func (MemberController) RejectMember(ctx echo.Context) error {
+	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err = member.MemberService{}.RejectMember(ctx.Request().Context(), uint(memberId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusBadRequest, err.Error())
+		}
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }

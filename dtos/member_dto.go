@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"github.com/labstack/echo"
+	"time"
 )
 
 type MemberInformation struct {
@@ -13,6 +14,7 @@ type MemberInformation struct {
 	Name                string               `json:"name"`
 	MemberRoles         []MemberRole         `json:"roles"`
 	MemberOrganizations []MemberOrganization `json:"organizations"`
+	CreatedAt           time.Time            `json:"createdAt"`
 }
 
 type MemberRole struct {
