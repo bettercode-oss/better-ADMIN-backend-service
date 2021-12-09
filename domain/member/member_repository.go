@@ -142,3 +142,8 @@ func (memberRepository) FindByGoogleId(ctx context.Context, googleId string) (Me
 
 	return memberEntity, nil
 }
+
+func (memberRepository) Delete(ctx context.Context, entity MemberEntity) error {
+	db := helpers.ContextHelper().GetDB(ctx)
+	return db.Delete(&entity).Error
+}

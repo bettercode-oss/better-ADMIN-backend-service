@@ -85,3 +85,13 @@ func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
 func (MemberService) GetMemberByGoogleId(ctx context.Context, googleId string) (MemberEntity, error) {
 	return memberRepository{}.FindByGoogleId(ctx, googleId)
 }
+
+func (MemberService) RejectMember(ctx context.Context, memberId uint) error {
+	repository := memberRepository{}
+	memberEntity, err := repository.FindById(ctx, memberId)
+	if err != nil {
+		return err
+	}
+
+	return repository.Delete(ctx, memberEntity)
+}
