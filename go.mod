@@ -5,10 +5,11 @@ go 1.15
 require (
 	github.com/bettercode-oss/rest v0.0.4
 	github.com/denisenkom/go-mssqldb v0.9.0 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-ldap/ldap/v3 v3.3.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-testfixtures/testfixtures/v3 v3.5.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgx/v4 v4.10.1 // indirect
 	github.com/jinzhu/configor v1.2.1
@@ -27,3 +28,5 @@ require (
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.21.9
 )
+
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible
