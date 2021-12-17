@@ -195,8 +195,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	e.Use(middlewares.GORMDb(gormDB))
 	e.Use(middlewares.JwtToken())
+	e.Use(middlewares.GORMDb(gormDB))
 	e.HideBanner = true
 
 	e.GET("/ws/:id", connectWebSocket)
