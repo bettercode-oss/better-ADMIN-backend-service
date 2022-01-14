@@ -108,7 +108,7 @@ func init() {
 				os.Getenv(EnvReplicaDbPassword),
 				os.Getenv(EnvReplicaDbHost),
 				os.Getenv(EnvReplicaDbName)))},
-		}))
+		}).SetConnMaxIdleTime(10).SetConnMaxLifetime(10 * time.Minute).SetMaxIdleConns(5).SetMaxOpenConns(10))
 	}
 
 	if err := initializeDatabase(db); err != nil {
