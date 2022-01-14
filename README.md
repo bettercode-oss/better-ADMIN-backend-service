@@ -35,6 +35,12 @@ REPLICA_DB_USER=better_admin
 REPLICA_DB_PASSWORD=root
 ```
 
+### JWT Secret
+환경 변수로 설정한다.
+```
+JWT_SECRET=secret
+```
+
 ## 도커
 
 ### 도커 이미지 빌드
