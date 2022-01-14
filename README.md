@@ -6,7 +6,7 @@ Golang 으로 구현한 better ADMIN Back-end Service
 ## 데이터베이스
 
 ### Sqlite
-별도 설정을 하지 않는다면 기본적으로는 Sqlite file 데이터베이스를 사용한다.
+별도 환경 변수를 설정을 하지 않는다면 기본적으로는 Sqlite file 데이터베이스를 사용한다.
 
 ### MySQL
 * 데이터 베이스 생성
@@ -17,11 +17,22 @@ CREATE SCHEMA IF NOT EXISTS `better_admin` DEFAULT CHARACTER SET utf8mb4;
 
 * 애플리케이션 실행 환경 변수 설정
 ```
-BETTER_ADMIN_DB_HOST=localhost:3306
-BETTER_ADMIN_DB_DRIVER=mysql
-BETTER_ADMIN_DB_NAME=better_admin
-BETTER_ADMIN_DB_USER=root
-BETTER_ADMIN_DB_PASSWORD=1111
+DB_DRIVER=mysql
+DB_HOST=localhost:3306
+DB_NAME=better_admin
+DB_USER=root
+DB_PASSWORD=1111
+```
+
+* Replica 
+
+Replica DB 사용 시 환경 변수로 추가로 Replica DB 접속 정보 설정한다.
+
+```
+REPLICA_DB_HOST=localhost:3306
+REPLICA_DB_NAME=mysql
+REPLICA_DB_USER=better_admin
+REPLICA_DB_PASSWORD=root
 ```
 
 ## 도커
