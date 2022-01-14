@@ -23,6 +23,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/plugin/dbresolver"
 	"net/http"
 	"os"
 	"time"
@@ -40,11 +41,15 @@ const (
 )
 
 const (
-	EnvBetterAdminDbHost     = "BETTER_ADMIN_DB_HOST"
-	EnvBetterAdminDbDriver   = "BETTER_ADMIN_DB_DRIVER"
-	EnvBetterAdminDbName     = "BETTER_ADMIN_DB_NAME"
-	EnvBetterAdminDbUser     = "BETTER_ADMIN_DB_USER"
-	EnvBetterAdminDbPassword = "BETTER_ADMIN_DB_PASSWORD"
+	EnvDbDriver          = "DB_DRIVER"
+	EnvDbHost            = "DB_HOST"
+	EnvDbName            = "DB_NAME"
+	EnvDbUser            = "DB_USER"
+	EnvDbPassword        = "DB_PASSWORD"
+	EnvReplicaDbHost     = "REPLICA_DB_HOST"
+	EnvReplicaDbName     = "REPLICA_DB_NAME"
+	EnvReplicaDbUser     = "REPLICA_DB_USER"
+	EnvReplicaDbPassword = "REPLICA_DB_PASSWORD"
 )
 
 var (
@@ -63,23 +68,23 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{DisableHTMLEscape: true})
 
 	var dialector gorm.Dialector
-	if len(os.Getenv(EnvBetterAdminDbHost)) > 0 &&
-		len(os.Getenv(EnvBetterAdminDbDriver)) > 0 &&
-		len(os.Getenv(EnvBetterAdminDbName)) > 0 &&
-		len(os.Getenv(EnvBetterAdminDbUser)) > 0 &&
-		len(os.Getenv(EnvBetterAdminDbPassword)) > 0 {
 
-		driver := os.Getenv(EnvBetterAdminDbDriver)
-		if driver != "mysql" {
-			panic("not supported database")
+	driver := os.Getenv(EnvDbDriver)
+
+	if driver == "mysql" {
+		if len(os.Getenv(EnvDbHost)) > 0 &&
+			len(os.Getenv(EnvDbName)) > 0 &&
+			len(os.Getenv(EnvDbUser)) > 0 &&
+			len(os.Getenv(EnvDbPassword)) > 0 {
+			dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
+				os.Getenv(EnvDbUser),
+				os.Getenv(EnvDbPassword),
+				os.Getenv(EnvDbHost),
+				os.Getenv(EnvDbName))
+			dialector = mysql.Open(dsn)
+		} else {
+			panic(fmt.Sprintf("%s, %s, %s  and %s environment variable are required.", EnvDbHost, EnvDbName, EnvDbUser, EnvDbPassword))
 		}
-
-		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
-			os.Getenv(EnvBetterAdminDbUser),
-			os.Getenv(EnvBetterAdminDbPassword),
-			os.Getenv(EnvBetterAdminDbHost),
-			os.Getenv(EnvBetterAdminDbName))
-		dialector = mysql.Open(dsn)
 	} else {
 		// 기본적으로 DB는 sqlite
 		dialector = sqlite.Open("account.db")
@@ -91,6 +96,19 @@ func init() {
 
 	if err != nil {
 		panic("Database Connection Error")
+	}
+
+	if len(os.Getenv(EnvReplicaDbHost)) > 0 &&
+		len(os.Getenv(EnvReplicaDbName)) > 0 &&
+		len(os.Getenv(EnvReplicaDbUser)) > 0 &&
+		len(os.Getenv(EnvReplicaDbPassword)) > 0 {
+		db.Use(dbresolver.Register(dbresolver.Config{
+			Replicas: []gorm.Dialector{mysql.Open(fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
+				os.Getenv(EnvReplicaDbUser),
+				os.Getenv(EnvReplicaDbPassword),
+				os.Getenv(EnvReplicaDbHost),
+				os.Getenv(EnvReplicaDbName)))},
+		}))
 	}
 
 	if err := initializeDatabase(db); err != nil {

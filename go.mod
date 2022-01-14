@@ -27,6 +27,7 @@ require (
 	gorm.io/driver/mysql v1.1.0
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.21.9
+	gorm.io/plugin/dbresolver v1.1.0
 )
 
 replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible
