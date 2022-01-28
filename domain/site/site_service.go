@@ -2,6 +2,7 @@ package site
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/helpers"
 	"context"
 )
 
@@ -9,8 +10,12 @@ type SiteService struct {
 }
 
 func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting interface{}) error {
-	repository := siteSettingRepository{}
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
 
+	repository := siteSettingRepository{}
 	foundSettingEntity, err := repository.FindByKey(ctx, key)
 	if err != nil {
 		if err == domain.ErrNotFound {
@@ -18,6 +23,8 @@ func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting in
 			newSetting := SettingEntity{
 				Key:         key,
 				ValueObject: setting,
+				CreatedBy:   userClaim.Id,
+				UpdatedBy:   userClaim.Id,
 			}
 
 			return repository.Save(ctx, newSetting)
@@ -25,6 +32,7 @@ func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting in
 	}
 
 	foundSettingEntity.ValueObject = setting
+	foundSettingEntity.UpdatedBy = userClaim.Id
 	return repository.Save(ctx, foundSettingEntity)
 }
 

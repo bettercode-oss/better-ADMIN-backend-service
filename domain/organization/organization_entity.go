@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 	"fmt"
 	"github.com/wesovilabs/koazee"
@@ -14,20 +15,30 @@ import (
 
 type OrganizationEntity struct {
 	gorm.Model
-	Name                 string
+	Name                 string `gorm:"type:varchar(100);not null"`
 	ParentOrganizationID *uint
 	ParentOrganization   *OrganizationEntity
 	Path                 string                `gorm:"-"`
 	Roles                []rbac.RoleEntity     `gorm:"many2many:organization_roles;"`
 	Members              []member.MemberEntity `gorm:"many2many:organization_members;"`
+	CreatedBy            uint
+	UpdatedBy            uint
 }
 
 func (OrganizationEntity) TableName() string {
 	return "organizations"
 }
 
-func (o *OrganizationEntity) ChangePosition(parentOrganizationId *uint) {
+func (o *OrganizationEntity) ChangePosition(ctx context.Context, parentOrganizationId *uint) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	o.ParentOrganizationID = parentOrganizationId
+	o.UpdatedBy = userClaim.Id
+
+	return nil
 }
 
 func (o *OrganizationEntity) generatePath(entities []OrganizationEntity) {
@@ -100,8 +111,15 @@ func (o *OrganizationEntity) AssignMember(ctx context.Context, assignMember dtos
 	return nil
 }
 
-func (o *OrganizationEntity) ChangeName(name string) {
+func (o *OrganizationEntity) ChangeName(ctx context.Context, name string) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	o.Name = name
+	o.UpdatedBy = userClaim.Id
+	return nil
 }
 
 func (o OrganizationEntity) ExistMember(memberId uint) bool {
@@ -114,9 +132,16 @@ func (o OrganizationEntity) ExistMember(memberId uint) bool {
 	return false
 }
 
-func NewOrganizationEntity(information dtos.OrganizationInformation) OrganizationEntity {
+func NewOrganizationEntity(ctx context.Context, information dtos.OrganizationInformation) (OrganizationEntity, error) {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return OrganizationEntity{}, err
+	}
+
 	return OrganizationEntity{
 		Name:                 information.Name,
 		ParentOrganizationID: information.ParentOrganizationId,
-	}
+		CreatedBy:            userClaim.Id,
+		UpdatedBy:            userClaim.Id,
+	}, nil
 }

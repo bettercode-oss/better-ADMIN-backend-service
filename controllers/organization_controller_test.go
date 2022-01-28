@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"better-admin-backend-service/security"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -24,6 +26,11 @@ func TestOrganizationController_CreateOrganization_최상위_조직으로_추가
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(OrganizationController{}.CreateOrganization, ctx)
 
@@ -44,6 +51,11 @@ func TestOrganizationController_CreateOrganization_상위조직이_있는_경우
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(OrganizationController{}.CreateOrganization, ctx)
@@ -147,6 +159,11 @@ func TestOrganizationController_ChangePosition_하위로_변경(t *testing.T) {
 	ctx.SetParamNames("organizationId")
 	ctx.SetParamValues(organizationId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(OrganizationController{}.ChangePosition, ctx)
 
@@ -168,6 +185,11 @@ func TestOrganizationController_ChangePosition_최상위로_변경(t *testing.T)
 	ctx.SetParamNames("organizationId")
 	ctx.SetParamValues(organizationId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(OrganizationController{}.ChangePosition, ctx)
 
@@ -187,6 +209,11 @@ func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
 	ctx.SetParamNames("organizationId")
 	ctx.SetParamValues(organizationId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(OrganizationController{}.DeleteOrganization, ctx)
 
@@ -205,6 +232,11 @@ func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("organizationId")
 	ctx.SetParamValues(organizationId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(OrganizationController{}.DeleteOrganization, ctx)
@@ -274,6 +306,11 @@ func TestOrganizationController_ChangeOrganizationName(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("organizationId")
 	ctx.SetParamValues(organizationId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(OrganizationController{}.ChangeOrganizationName, ctx)

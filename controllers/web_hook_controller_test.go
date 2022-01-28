@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"better-admin-backend-service/security"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -24,6 +26,11 @@ func TestWebHookController_CreateWebHook(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(WebHookController{}.CreateWebHook, ctx)
@@ -80,6 +87,11 @@ func TestWebHookController_DeleteWebHook(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(webHookId)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(WebHookController{}.DeleteWebHook, ctx)
@@ -140,6 +152,11 @@ func TestWebHookController_UpdateWebHook(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues(webHookId)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(WebHookController{}.UpdateWebHook, ctx)

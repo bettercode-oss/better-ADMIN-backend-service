@@ -25,27 +25,27 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT count(*) FROM permissions WHERE type= 'pre-define'").Scan(&permissionCount)
 
 	if permissionCount == 0 {
-		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", domain.PermissionManageSystemSettings, "시스템 설정(예. 두레이 로그인 등) 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", domain.PermissionManageMembers, "멤버 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", domain.PermissionManageAccessControl, "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", domain.PermissionManageOrganization, "조직 관리 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO permissions(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", domain.PermissionNoteWebHooks, "웹훅 전송 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func initializeDatabase(db *gorm.DB) error {
 	db.Raw("SELECT count(*) FROM roles WHERE type= 'pre-define'").Scan(&roleCount)
 
 	if roleCount == 0 {
-		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", "시스템 관리자", "", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func initializeDatabase(db *gorm.DB) error {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at) values(?, ?, ?, ?, ?)",
+		if err := db.Exec("INSERT INTO roles(type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, 1, 1)",
 			"pre-define", "조직/멤버 관리자", "", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}

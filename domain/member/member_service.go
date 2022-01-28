@@ -3,6 +3,7 @@ package member
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 )
 
@@ -75,7 +76,7 @@ func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
 		return err
 	}
 
-	if err := memberEntity.Approve(); err != nil {
+	if err := memberEntity.Approve(ctx); err != nil {
 		return err
 	}
 
@@ -87,11 +88,17 @@ func (MemberService) GetMemberByGoogleId(ctx context.Context, googleId string) (
 }
 
 func (MemberService) RejectMember(ctx context.Context, memberId uint) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	repository := memberRepository{}
 	memberEntity, err := repository.FindById(ctx, memberId)
 	if err != nil {
 		return err
 	}
 
+	memberEntity.UpdatedBy = userClaim.Id
 	return repository.Delete(ctx, memberEntity)
 }

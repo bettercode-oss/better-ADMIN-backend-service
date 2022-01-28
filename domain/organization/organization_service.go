@@ -2,6 +2,7 @@ package organization
 
 import (
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 	"github.com/wesovilabs/koazee"
 	"strings"
@@ -11,7 +12,10 @@ type OrganizationService struct {
 }
 
 func (OrganizationService) CreateOrganization(ctx context.Context, information dtos.OrganizationInformation) error {
-	organizationEntity := NewOrganizationEntity(information)
+	organizationEntity, err := NewOrganizationEntity(ctx, information)
+	if err != nil {
+		return err
+	}
 	return organizationRepository{}.Create(ctx, organizationEntity)
 }
 
@@ -39,12 +43,20 @@ func (OrganizationService) ChangePosition(ctx context.Context, organizationId ui
 		return err
 	}
 
-	organizationEntity.ChangePosition(parentOrganizationId)
+	err = organizationEntity.ChangePosition(ctx, parentOrganizationId)
+	if err != nil {
+		return err
+	}
 
 	return repository.Save(ctx, &organizationEntity)
 }
 
 func (OrganizationService) DeleteOrganization(ctx context.Context, organizationId uint) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	repository := organizationRepository{}
 	organizationEntity, err := repository.FindById(ctx, organizationId)
 	if err != nil {
@@ -57,11 +69,13 @@ func (OrganizationService) DeleteOrganization(ctx context.Context, organizationI
 	}
 
 	for _, childEntity := range childEntities {
+		childEntity.UpdatedBy = userClaim.Id
 		if err := repository.Delete(ctx, childEntity); err != nil {
 			return err
 		}
 	}
 
+	organizationEntity.UpdatedBy = userClaim.Id
 	return repository.Delete(ctx, organizationEntity)
 }
 
@@ -102,7 +116,10 @@ func (OrganizationService) ChangeOrganizationName(ctx context.Context, organizat
 		return err
 	}
 
-	organizationEntity.ChangeName(organizationName)
+	err = organizationEntity.ChangeName(ctx, organizationName)
+	if err != nil {
+		return err
+	}
 
 	return repository.Save(ctx, &organizationEntity)
 }

@@ -4,15 +4,21 @@
   description: "시스템 설정 권한"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1
 - id: 2
   type: "pre-define"
   name: "MANAGE_MEMBERS"
   description: "멤버 관리 권한"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1
 - id: 3
   type: "user-define"
   name: "ACCESS_STOCK"
   description: "재고 접근 권한"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1

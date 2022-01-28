@@ -51,6 +51,10 @@ func (webHookRepository) FindById(ctx context.Context, id uint) (WebHookEntity, 
 
 func (webHookRepository) Delete(ctx context.Context, entity WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
+	if err := db.Save(entity).Error; err != nil {
+		return err
+	}
+
 	return db.Delete(&entity).Error
 }
 
