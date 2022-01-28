@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 	"errors"
 	"golang.org/x/crypto/bcrypt"
@@ -23,16 +24,17 @@ const (
 
 type MemberEntity struct {
 	gorm.Model
-	Type           string
-	SignId         string
-	Name           string
-	Password       string
-	Status         string
-	DoorayId       string
-	DoorayUserCode string
-	GoogleId       string
-	GoogleMail     string
-	Picture        string
+	Type           string `gorm:"type:varchar(20);not null"`
+	SignId         string `gorm:"type:varchar(50)"`
+	Name           string `gorm:"type:varchar(50)"`
+	Password       string `gorm:"type:varchar(100)"`
+	Status         string `gorm:"type:varchar(20);not null"`
+	DoorayId       string `gorm:"type:varchar(50)"`
+	DoorayUserCode string `gorm:"type:varchar(50)"`
+	GoogleId       string `gorm:"type:varchar(50)"`
+	GoogleMail     string `gorm:"type:varchar(50)"`
+	Picture        string `gorm:"type:varchar(1000)"`
+	UpdatedBy      uint
 	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
@@ -92,6 +94,11 @@ func (m MemberEntity) GetTypeName() string {
 }
 
 func (m *MemberEntity) AssignRole(ctx context.Context, role dtos.MemberAssignRole) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	// 기존 역할을 덮어쓰기
 	filters := map[string]interface{}{}
 	filters["roleIds"] = role.RoleIds
@@ -102,6 +109,7 @@ func (m *MemberEntity) AssignRole(ctx context.Context, role dtos.MemberAssignRol
 	}
 
 	m.Roles = findRoleEntities
+	m.UpdatedBy = userClaim.Id
 
 	return nil
 }
@@ -144,11 +152,17 @@ func (m MemberEntity) GetPermissionNames() []string {
 	return permissionNames
 }
 
-func (m *MemberEntity) Approve() error {
+func (m *MemberEntity) Approve(ctx context.Context) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	if m.Status == StatusMemberApproved {
 		return domain.ErrAlreadyApproved
 	}
 	m.Status = StatusMemberApproved
+	m.UpdatedBy = userClaim.Id
 	return nil
 }
 

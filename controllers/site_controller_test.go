@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"better-admin-backend-service/config"
+	"better-admin-backend-service/security"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -26,6 +28,11 @@ func TestSiteController_SetDoorayLoginSetting(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(SiteController{}.SetDoorayLoginSetting, ctx)
@@ -101,6 +108,11 @@ func TestSiteController_SetGoogleWorkspaceLoginSetting(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(SiteController{}.SetGoogleWorkspaceLoginSetting, ctx)

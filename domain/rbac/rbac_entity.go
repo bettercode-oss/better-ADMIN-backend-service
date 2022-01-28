@@ -3,6 +3,7 @@ package rbac
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 	"gorm.io/gorm"
 )
@@ -16,9 +17,11 @@ const (
 
 type PermissionEntity struct {
 	gorm.Model
-	Type        string `gorm:"not null"`
-	Name        string `gorm:"not null"`
-	Description string
+	Type        string `gorm:"type:varchar(50);not null"`
+	Name        string `gorm:"type:varchar(100);not null"`
+	Description string `gorm:"type:varchar(1000)"`
+	CreatedBy   uint
+	UpdatedBy   uint
 }
 
 func (PermissionEntity) TableName() string {
@@ -38,6 +41,11 @@ func (p PermissionEntity) GetTypeName() string {
 }
 
 func (p *PermissionEntity) Update(ctx context.Context, information dtos.PermissionInformation) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	if p.Type == PreDefineTypeKey {
 		return domain.ErrNonChangeable
 	}
@@ -56,6 +64,7 @@ func (p *PermissionEntity) Update(ctx context.Context, information dtos.Permissi
 
 	p.Name = information.Name
 	p.Description = information.Description
+	p.UpdatedBy = userClaim.Id
 
 	return nil
 }
@@ -68,19 +77,28 @@ func (p PermissionEntity) Deletable() error {
 	return nil
 }
 
-func NewPermissionEntity(information dtos.PermissionInformation) PermissionEntity {
+func NewPermissionEntity(ctx context.Context, information dtos.PermissionInformation) (PermissionEntity, error) {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return PermissionEntity{}, err
+	}
+
 	return PermissionEntity{
 		Type:        UserDefineTypeKey,
 		Name:        information.Name,
 		Description: information.Description,
-	}
+		CreatedBy:   userClaim.Id,
+		UpdatedBy:   userClaim.Id,
+	}, nil
 }
 
 type RoleEntity struct {
 	gorm.Model
-	Type        string
-	Name        string
-	Description string
+	Type        string `gorm:"type:varchar(50);not null"`
+	Name        string `gorm:"type:varchar(100);not null"`
+	Description string `gorm:"type:varchar(1000)"`
+	CreatedBy   uint
+	UpdatedBy   uint
 	Permissions []PermissionEntity `gorm:"many2many:role_permissions;"`
 }
 
@@ -109,12 +127,18 @@ func (r RoleEntity) Deletable() error {
 }
 
 func (r *RoleEntity) Update(ctx context.Context, information dtos.RoleInformation) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	if r.Type == PreDefineTypeKey {
 		return domain.ErrNonChangeable
 	}
 
 	r.Name = information.Name
 	r.Description = information.Description
+	r.UpdatedBy = userClaim.Id
 
 	filters := map[string]interface{}{}
 	filters["permissionIds"] = information.AllowedPermissionIds
@@ -128,10 +152,17 @@ func (r *RoleEntity) Update(ctx context.Context, information dtos.RoleInformatio
 }
 
 func NewRoleEntity(ctx context.Context, information dtos.RoleInformation) (RoleEntity, error) {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return RoleEntity{}, err
+	}
+
 	role := RoleEntity{
 		Type:        UserDefineTypeKey,
 		Name:        information.Name,
 		Description: information.Description,
+		CreatedBy:   userClaim.Id,
+		UpdatedBy:   userClaim.Id,
 	}
 	filters := map[string]interface{}{}
 	filters["permissionIds"] = information.AllowedPermissionIds

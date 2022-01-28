@@ -3,6 +3,7 @@ package webhook
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 )
 
@@ -23,7 +24,7 @@ func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos
 		nextId = lastEntity.nextId()
 	}
 
-	entity, err := NewWebHookEntity(nextId, webHookInformation)
+	entity, err := NewWebHookEntity(ctx, nextId, webHookInformation)
 	if err != nil {
 		return err
 	}
@@ -38,11 +39,17 @@ func (WebHookService) GetWebHooks(ctx context.Context, pageable dtos.Pageable) (
 func (WebHookService) DeleteWebHook(ctx context.Context, webHookId uint) error {
 	repository := webHookRepository{}
 
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	entity, err := repository.FindById(ctx, webHookId)
 	if err != nil {
 		return err
 	}
 
+	entity.UpdatedBy = userClaim.Id
 	return repository.Delete(ctx, entity)
 }
 
@@ -58,7 +65,10 @@ func (WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHook
 		return err
 	}
 
-	entity.Update(webHookInformation)
+	err = entity.Update(ctx, webHookInformation)
+	if err != nil {
+		return err
+	}
 
 	return repository.Save(ctx, entity)
 }

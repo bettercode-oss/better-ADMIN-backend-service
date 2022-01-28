@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"context"
 )
 
@@ -9,7 +10,10 @@ type RoleBasedAccessControlService struct {
 }
 
 func (RoleBasedAccessControlService) CreatePermission(ctx context.Context, permissionInformation dtos.PermissionInformation) error {
-	permissionEntity := NewPermissionEntity(permissionInformation)
+	permissionEntity, err := NewPermissionEntity(ctx, permissionInformation)
+	if err != nil {
+		return err
+	}
 	return permissionRepository{}.Create(ctx, &permissionEntity)
 }
 
@@ -45,6 +49,11 @@ func (RoleBasedAccessControlService) UpdatePermission(ctx context.Context, permi
 }
 
 func (RoleBasedAccessControlService) DeletePermission(ctx context.Context, permissionId uint) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	repository := permissionRepository{}
 
 	permissionEntity, err := repository.FindById(ctx, permissionId)
@@ -56,10 +65,17 @@ func (RoleBasedAccessControlService) DeletePermission(ctx context.Context, permi
 		return err
 	}
 
+	permissionEntity.UpdatedBy = userClaim.Id
+
 	return repository.Delete(ctx, permissionEntity)
 }
 
 func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint) error {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
+	if err != nil {
+		return err
+	}
+
 	repository := roleRepository{}
 
 	roleEntity, err := repository.FindById(ctx, roleId)
@@ -70,6 +86,8 @@ func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint
 	if err := roleEntity.Deletable(); err != nil {
 		return err
 	}
+
+	roleEntity.UpdatedBy = userClaim.Id
 
 	return repository.Delete(ctx, roleEntity)
 }

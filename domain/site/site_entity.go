@@ -12,9 +12,11 @@ const (
 
 type SettingEntity struct {
 	gorm.Model
-	Key         string
-	Value       string
+	Key         string      `gorm:"type:varchar(20);not null"`
+	Value       string      `gorm:"type:text;not null"`
 	ValueObject interface{} `gorm:"-"`
+	CreatedBy   uint
+	UpdatedBy   uint
 }
 
 func (SettingEntity) TableName() string {

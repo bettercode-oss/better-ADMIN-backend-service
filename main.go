@@ -84,7 +84,7 @@ func setUpDatabase() {
 			len(os.Getenv(EnvDbName)) > 0 &&
 			len(os.Getenv(EnvDbUser)) > 0 &&
 			len(os.Getenv(EnvDbPassword)) > 0 {
-			dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
+			dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 				os.Getenv(EnvDbUser),
 				os.Getenv(EnvDbPassword),
 				os.Getenv(EnvDbHost),
@@ -111,7 +111,7 @@ func setUpDatabase() {
 		len(os.Getenv(EnvReplicaDbUser)) > 0 &&
 		len(os.Getenv(EnvReplicaDbPassword)) > 0 {
 		db.Use(dbresolver.Register(dbresolver.Config{
-			Replicas: []gorm.Dialector{mysql.Open(fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True",
+			Replicas: []gorm.Dialector{mysql.Open(fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 				os.Getenv(EnvReplicaDbUser),
 				os.Getenv(EnvReplicaDbPassword),
 				os.Getenv(EnvReplicaDbHost),

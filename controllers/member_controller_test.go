@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"better-admin-backend-service/security"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -406,6 +408,11 @@ func TestMemberController_AssignRoles(t *testing.T) {
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("1")
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(MemberController{}.AssignRole, ctx)
 
@@ -427,6 +434,11 @@ func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("1")
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(MemberController{}.AssignRole, ctx)
@@ -524,6 +536,11 @@ func TestMemberController_ApproveMember(t *testing.T) {
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("4")
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(MemberController{}.ApproveMember, ctx)
 
@@ -542,6 +559,11 @@ func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("1")
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(MemberController{}.ApproveMember, ctx)
@@ -619,6 +641,11 @@ func TestMemberController_RejectMember(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("id")
 	ctx.SetParamValues("4")
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(MemberController{}.RejectMember, ctx)

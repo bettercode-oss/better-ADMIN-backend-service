@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"better-admin-backend-service/security"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -25,6 +27,11 @@ func TestAccessControlController_CreatePermission(t *testing.T) {
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.CreatePermission, ctx)
 
@@ -44,6 +51,11 @@ func TestAccessControlController_CreatePermission_권한명이_이미_있는_경
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.CreatePermission, ctx)
@@ -102,6 +114,11 @@ func TestAccessControlController_UpdatePermission(t *testing.T) {
 	ctx.SetParamNames("permissionId")
 	ctx.SetParamValues(permissionId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.UpdatePermission, ctx)
 
@@ -125,6 +142,11 @@ func TestAccessControlController_UpdatePermission_사전_정의_유형(t *testin
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("permissionId")
 	ctx.SetParamValues(permissionId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.UpdatePermission, ctx)
@@ -154,6 +176,11 @@ func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_
 	ctx.SetParamNames("permissionId")
 	ctx.SetParamValues(permissionId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.UpdatePermission, ctx)
 
@@ -176,6 +203,11 @@ func TestAccessControlController_DeletePermission(t *testing.T) {
 	ctx.SetParamNames("permissionId")
 	ctx.SetParamValues(permissionId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.DeletePermission, ctx)
 
@@ -193,6 +225,11 @@ func TestAccessControlController_DeletePermission_사전_정의_유형(t *testin
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("permissionId")
 	ctx.SetParamValues(permissionId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.DeletePermission, ctx)
@@ -219,6 +256,11 @@ func TestAccessControlController_CreateRole(t *testing.T) {
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.CreateRole, ctx)
@@ -302,6 +344,11 @@ func TestAccessControlController_DeleteRole(t *testing.T) {
 	ctx.SetParamNames("roleId")
 	ctx.SetParamValues(roleId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.DeleteRole, ctx)
 
@@ -319,6 +366,11 @@ func TestAccessControlController_DeleteRole_사전정의_유형(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("roleId")
 	ctx.SetParamValues(roleId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.DeleteRole, ctx)
@@ -350,6 +402,11 @@ func TestAccessControlController_UpdateRole(t *testing.T) {
 	ctx.SetParamNames("roleId")
 	ctx.SetParamValues(roleId)
 
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
 	// when
 	handleWithFilter(AccessControlController{}.UpdateRole, ctx)
 
@@ -374,6 +431,11 @@ func TestAccessControlController_UpdateRole_사전정의_유형(t *testing.T) {
 	ctx := echoApp.NewContext(req, rec)
 	ctx.SetParamNames("roleId")
 	ctx.SetParamValues(roleId)
+
+	userClaim := security.UserClaim{
+		Id: 2,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
 
 	// when
 	handleWithFilter(AccessControlController{}.UpdateRole, ctx)

@@ -101,5 +101,8 @@ func (organizationRepository) Save(ctx context.Context, entity *OrganizationEnti
 
 func (organizationRepository) Delete(ctx context.Context, entity OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
+	if err := db.Save(entity).Error; err != nil {
+		return err
+	}
 	return db.Delete(&entity).Error
 }

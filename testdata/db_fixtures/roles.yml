@@ -4,14 +4,20 @@
   description: "시스템 관리자"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1
 - id: 2
   type: "pre-define"
   name: "MEMBER MANAGER"
   description: "멤버 관리자"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1
 - id: 3
   type: "user-define"
   name: "테스트 관리자"
   updated_at: RAW=datetime('now')
   created_at: RAW=datetime('now')
+  created_by: 1
+  updated_by: 1

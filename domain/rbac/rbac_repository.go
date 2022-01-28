@@ -74,6 +74,9 @@ func (permissionRepository) Save(ctx context.Context, entity PermissionEntity) e
 
 func (permissionRepository) Delete(ctx context.Context, entity PermissionEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
+	if err := db.Save(entity).Error; err != nil {
+		return err
+	}
 	return db.Delete(&entity).Error
 }
 
@@ -141,6 +144,9 @@ func (roleRepository) FindById(ctx context.Context, id uint) (RoleEntity, error)
 
 func (roleRepository) Delete(ctx context.Context, entity RoleEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
+	if err := db.Save(entity).Error; err != nil {
+		return err
+	}
 	return db.Delete(&entity).Error
 }
 
