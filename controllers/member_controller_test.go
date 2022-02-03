@@ -30,37 +30,82 @@ func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
 	fmt.Println(rec.Body.String())
 	var resp interface{}
 	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.Equal(t, float64(3), resp.(map[string]interface{})["totalCount"])
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(1),
+				"signId":      "siteadm",
+				"candidateId": "siteadm",
+				"type":        "site",
+				"typeName":    "사이트",
+				"name":        "사이트 관리자",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+			},
+			map[string]interface{}{
+				"id":          float64(2),
+				"signId":      "",
+				"candidateId": "2222",
+				"type":        "dooray",
+				"typeName":    "두레이",
+				"name":        "유영모",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MEMBER MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+			},
+		},
+		"totalCount": float64(3),
+	}
 
-	members := resp.(map[string]interface{})["result"].([]interface{})
-	assert.Equal(t, 2, len(members))
+	assert.Equal(t, expected, resp)
 
-	index := 0
-	assert.Equal(t, float64(1), members[index].(map[string]interface{})["id"])
-	assert.Equal(t, "site", members[index].(map[string]interface{})["type"])
-	assert.Equal(t, "사이트", members[index].(map[string]interface{})["typeName"])
-	assert.Equal(t, "사이트 관리자", members[index].(map[string]interface{})["name"])
-
-	memberRoles := members[index].(map[string]interface{})["roles"].([]interface{})
-	assert.Equal(t, 1, len(memberRoles))
-	memberRoleIndex := 0
-	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
-
-	index++
-	assert.Equal(t, float64(2), members[index].(map[string]interface{})["id"])
-	assert.Equal(t, "dooray", members[index].(map[string]interface{})["type"])
-	assert.Equal(t, "두레이", members[index].(map[string]interface{})["typeName"])
-	assert.Equal(t, "유영모", members[index].(map[string]interface{})["name"])
-
-	memberRoles = members[index].(map[string]interface{})["roles"].([]interface{})
-	assert.Equal(t, 2, len(memberRoles))
-	memberRoleIndex = 0
-	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
-	memberRoleIndex++
-	assert.Equal(t, float64(2), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "MEMBER MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
 }
 
 func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
@@ -93,6 +138,7 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 				"roles":         []interface{}{},
 				"organizations": []interface{}{},
 				"createdAt":     "1982-01-04T00:00:00Z",
+				"lastAccessAt":  "1982-01-05T00:00:00Z",
 			},
 		},
 		"totalCount": float64(1),
@@ -122,13 +168,14 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 	expected := map[string]interface{}{
 		"result": []interface{}{
 			map[string]interface{}{
-				"id":          float64(2),
-				"signId":      "",
-				"type":        "dooray",
-				"typeName":    "두레이",
-				"candidateId": "2222",
-				"name":        "유영모",
-				"createdAt":   "1982-01-04T00:00:00Z",
+				"id":           float64(2),
+				"signId":       "",
+				"type":         "dooray",
+				"typeName":     "두레이",
+				"candidateId":  "2222",
+				"name":         "유영모",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -157,14 +204,15 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 				},
 			},
 			map[string]interface{}{
-				"id":          float64(3),
-				"signId":      "ymyoo",
-				"type":        "site",
-				"typeName":    "사이트",
-				"candidateId": "ymyoo",
-				"name":        "유영모2",
-				"createdAt":   "1982-01-04T00:00:00Z",
-				"roles":       []interface{}{},
+				"id":           float64(3),
+				"signId":       "ymyoo",
+				"type":         "site",
+				"typeName":     "사이트",
+				"candidateId":  "ymyoo",
+				"name":         "유영모2",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+				"roles":        []interface{}{},
 				"organizations": []interface{}{
 					map[string]interface{}{
 						"id":   float64(4),
@@ -206,13 +254,14 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 	expected := map[string]interface{}{
 		"result": []interface{}{
 			map[string]interface{}{
-				"id":          float64(1),
-				"signId":      "siteadm",
-				"type":        "site",
-				"typeName":    "사이트",
-				"candidateId": "siteadm",
-				"name":        "사이트 관리자",
-				"createdAt":   "1982-01-04T00:00:00Z",
+				"id":           float64(1),
+				"signId":       "siteadm",
+				"type":         "site",
+				"typeName":     "사이트",
+				"candidateId":  "siteadm",
+				"name":         "사이트 관리자",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -237,13 +286,14 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 				},
 			},
 			map[string]interface{}{
-				"id":          float64(2),
-				"signId":      "",
-				"type":        "dooray",
-				"typeName":    "두레이",
-				"candidateId": "2222",
-				"name":        "유영모",
-				"createdAt":   "1982-01-04T00:00:00Z",
+				"id":           float64(2),
+				"signId":       "",
+				"type":         "dooray",
+				"typeName":     "두레이",
+				"candidateId":  "2222",
+				"name":         "유영모",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -272,14 +322,15 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 				},
 			},
 			map[string]interface{}{
-				"id":          float64(3),
-				"signId":      "ymyoo",
-				"type":        "site",
-				"typeName":    "사이트",
-				"candidateId": "ymyoo",
-				"name":        "유영모2",
-				"createdAt":   "1982-01-04T00:00:00Z",
-				"roles":       []interface{}{},
+				"id":           float64(3),
+				"signId":       "ymyoo",
+				"type":         "site",
+				"typeName":     "사이트",
+				"candidateId":  "ymyoo",
+				"name":         "유영모2",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+				"roles":        []interface{}{},
 				"organizations": []interface{}{
 					map[string]interface{}{
 						"id":   float64(4),
@@ -321,13 +372,14 @@ func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
 	expected := map[string]interface{}{
 		"result": []interface{}{
 			map[string]interface{}{
-				"id":          float64(1),
-				"signId":      "siteadm",
-				"type":        "site",
-				"typeName":    "사이트",
-				"candidateId": "siteadm",
-				"name":        "사이트 관리자",
-				"createdAt":   "1982-01-04T00:00:00Z",
+				"id":           float64(1),
+				"signId":       "siteadm",
+				"type":         "site",
+				"typeName":     "사이트",
+				"candidateId":  "siteadm",
+				"name":         "사이트 관리자",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
@@ -352,13 +404,14 @@ func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
 				},
 			},
 			map[string]interface{}{
-				"id":          float64(2),
-				"signId":      "",
-				"type":        "dooray",
-				"typeName":    "두레이",
-				"candidateId": "2222",
-				"name":        "유영모",
-				"createdAt":   "1982-01-04T00:00:00Z",
+				"id":           float64(2),
+				"signId":       "",
+				"type":         "dooray",
+				"typeName":     "두레이",
+				"candidateId":  "2222",
+				"name":         "유영모",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
 				"roles": []interface{}{
 					map[string]interface{}{
 						"id":   float64(1),
