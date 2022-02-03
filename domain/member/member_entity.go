@@ -9,6 +9,7 @@ import (
 	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"time"
 )
 
 const (
@@ -35,6 +36,7 @@ type MemberEntity struct {
 	GoogleMail     string `gorm:"type:varchar(50)"`
 	Picture        string `gorm:"type:varchar(1000)"`
 	UpdatedBy      uint
+	LastAccessAt   time.Time
 	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
@@ -183,6 +185,10 @@ func (m MemberEntity) GetCandidateId() string {
 	} else {
 		return ""
 	}
+}
+
+func (m *MemberEntity) UpdateLastAccessAt() {
+	m.LastAccessAt = time.Now()
 }
 
 func NewMemberEntityFromSignUp(signUp dtos.MemberSignUp) (MemberEntity, error) {

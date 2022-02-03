@@ -16,24 +16,26 @@ import (
 type AuthService struct {
 }
 
-func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (token security.JwtToken, err error) {
+func (service AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
 	memberEntity, err := member.MemberService{}.GetMemberBySignId(ctx, signIn.Id)
 	if err != nil {
-		return
+		return security.JwtToken{}, err
 	}
 
 	err = memberEntity.ValidatePassword(signIn.Password)
 	if err != nil {
-		err = domain.ErrAuthentication
-		return
+		return security.JwtToken{}, domain.ErrAuthentication
 	}
 
 	approved := memberEntity.IsApproved()
 	if approved == false {
-		err = domain.ErrUnApproved
-		return
+		return security.JwtToken{}, domain.ErrUnApproved
 	}
 
+	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
+}
+
+func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Context, memberEntity member.MemberEntity) (token security.JwtToken, err error) {
 	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
 	if err != nil {
 		return
@@ -44,10 +46,21 @@ func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.Mem
 		Roles:       memberAssignedAllRoleAndPermission.Roles,
 		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	})
+
+	err = service.logMemberAccessAt(ctx, memberEntity.ID)
 	return
 }
 
-func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
+func (service AuthService) logMemberAccessAt(ctx context.Context, memberId uint) error {
+	err := member.MemberService{}.UpdateMemberLastAccessAt(ctx, memberId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
 	doorayLoginSetting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyDoorayLogin)
 	if err != nil {
 		return security.JwtToken{}, err
@@ -92,19 +105,10 @@ func (AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.
 		return security.JwtToken{}, err
 	}
 
-	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
-	if err != nil {
-		return security.JwtToken{}, err
-	}
-
-	return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
-		Id:          memberEntity.ID,
-		Roles:       memberAssignedAllRoleAndPermission.Roles,
-		Permissions: memberAssignedAllRoleAndPermission.Permissions,
-	})
+	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }
 
-func (AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
+func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
 	googleWorkspaceLoginSetting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyGoogleWorkspaceLogin)
 	if err != nil {
 		return security.JwtToken{}, err
@@ -156,14 +160,5 @@ func (AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code stri
 		return security.JwtToken{}, err
 	}
 
-	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
-	if err != nil {
-		return security.JwtToken{}, err
-	}
-
-	return security.JwtAuthentication{}.GenerateJwtToken(security.UserClaim{
-		Id:          memberEntity.ID,
-		Roles:       memberAssignedAllRoleAndPermission.Roles,
-		Permissions: memberAssignedAllRoleAndPermission.Permissions,
-	})
+	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }

@@ -3,8 +3,10 @@ package controllers
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/auth"
+	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/security"
+	"context"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
@@ -97,20 +99,43 @@ func (AuthController) Logout(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, nil)
 }
 
-func (AuthController) RefreshAccessToken(ctx echo.Context) error {
+func (controller AuthController) RefreshAccessToken(ctx echo.Context) error {
 	cookie, err := ctx.Cookie("refreshToken")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, nil)
 	}
 
 	refreshToken := cookie.Value
-
 	jwtAuthentication := security.JwtAuthentication{}
 	accessToken, err := jwtAuthentication.RefreshAccessToken(refreshToken)
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	err = controller.logMemberAccessAtByToken(ctx.Request().Context(), refreshToken)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, err.Error())
+	}
 
 	result := map[string]string{}
 	result["accessToken"] = accessToken
 	return ctx.JSON(http.StatusOK, result)
+}
+
+func (AuthController) logMemberAccessAtByToken(ctx context.Context, token string) error {
+	jwtAuthentication := security.JwtAuthentication{}
+	userClaim, err := jwtAuthentication.ConvertTokenUserClaim(token)
+	if err != nil {
+		return err
+	}
+
+	err = member.MemberService{}.UpdateMemberLastAccessAt(ctx, userClaim.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) error {

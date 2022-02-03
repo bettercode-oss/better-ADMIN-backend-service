@@ -98,14 +98,15 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 			})
 		}
 		memberInformation := dtos.MemberInformation{
-			Id:          entity.ID,
-			SignId:      entity.SignId,
-			CandidateId: entity.GetCandidateId(),
-			Type:        entity.Type,
-			TypeName:    entity.GetTypeName(),
-			Name:        entity.Name,
-			MemberRoles: roles,
-			CreatedAt:   entity.CreatedAt,
+			Id:           entity.ID,
+			SignId:       entity.SignId,
+			CandidateId:  entity.GetCandidateId(),
+			Type:         entity.Type,
+			TypeName:     entity.GetTypeName(),
+			Name:         entity.Name,
+			MemberRoles:  roles,
+			CreatedAt:    entity.CreatedAt,
+			LastAccessAt: entity.LastAccessAt,
 		}
 
 		var memberOrganizations = make([]dtos.MemberOrganization, 0)

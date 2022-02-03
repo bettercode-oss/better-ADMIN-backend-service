@@ -102,3 +102,15 @@ func (MemberService) RejectMember(ctx context.Context, memberId uint) error {
 	memberEntity.UpdatedBy = userClaim.Id
 	return repository.Delete(ctx, memberEntity)
 }
+
+func (MemberService) UpdateMemberLastAccessAt(ctx context.Context, memberId uint) error {
+	repository := memberRepository{}
+	memberEntity, err := repository.FindById(ctx, memberId)
+	if err != nil {
+		return err
+	}
+
+	memberEntity.UpdateLastAccessAt()
+
+	return repository.Save(ctx, &memberEntity)
+}
