@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/factory"
 	"better-admin-backend-service/middlewares"
 	"github.com/labstack/echo"
 	"net/http"
@@ -57,32 +58,7 @@ func (controller OrganizationController) GetOrganizations(ctx echo.Context) erro
 	organizations := make([]dtos.OrganizationInformation, 0)
 	for _, entity := range allOfOrganizations {
 		if entity.ParentOrganizationID == nil {
-			organizationInformation := dtos.OrganizationInformation{
-				Id:   entity.ID,
-				Name: entity.Name,
-			}
-
-			if entity.Roles != nil && len(entity.Roles) > 0 {
-				roles := make([]dtos.OrganizationRole, 0)
-				for _, role := range entity.Roles {
-					roles = append(roles, dtos.OrganizationRole{
-						Id:   role.ID,
-						Name: role.Name,
-					})
-				}
-				organizationInformation.OrganizationRoles = roles
-			}
-
-			if entity.Members != nil && len(entity.Members) > 0 {
-				members := make([]dtos.OrganizationMember, 0)
-				for _, member := range entity.Members {
-					members = append(members, dtos.OrganizationMember{
-						Id:   member.ID,
-						Name: member.Name,
-					})
-				}
-				organizationInformation.OrganizationMembers = members
-			}
+			organizationInformation := factory.NewOrganizationInformationFromEntity(entity)
 			organizations = append(organizations, organizationInformation)
 			continue
 		}
@@ -96,30 +72,7 @@ func (controller OrganizationController) GetOrganizations(ctx echo.Context) erro
 			parentOrganizationInformation.SubOrganizations = make([]dtos.OrganizationInformation, 0)
 		}
 
-		organizationInformation := dtos.OrganizationInformation{
-			Id:   entity.ID,
-			Name: entity.Name,
-		}
-		if entity.Roles != nil && len(entity.Roles) > 0 {
-			roles := make([]dtos.OrganizationRole, 0)
-			for _, role := range entity.Roles {
-				roles = append(roles, dtos.OrganizationRole{
-					Id:   role.ID,
-					Name: role.Name,
-				})
-			}
-			organizationInformation.OrganizationRoles = roles
-		}
-		if entity.Members != nil && len(entity.Members) > 0 {
-			members := make([]dtos.OrganizationMember, 0)
-			for _, member := range entity.Members {
-				members = append(members, dtos.OrganizationMember{
-					Id:   member.ID,
-					Name: member.Name,
-				})
-			}
-			organizationInformation.OrganizationMembers = members
-		}
+		organizationInformation := factory.NewOrganizationInformationFromEntity(entity)
 		parentOrganizationInformation.SubOrganizations = append(parentOrganizationInformation.SubOrganizations, organizationInformation)
 	}
 
