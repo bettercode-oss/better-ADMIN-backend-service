@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain/member"
+	"better-admin-backend-service/domain/menu"
 	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
@@ -17,7 +18,7 @@ type DatabaseFixture struct {
 func (DatabaseFixture) setUpDefault() {
 	fmt.Println("Set up database test fixture")
 	gormDB.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{},
-		&organization.OrganizationEntity{}, &webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{})
+		&organization.OrganizationEntity{}, &webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{}, &menu.MenuEntity{})
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {

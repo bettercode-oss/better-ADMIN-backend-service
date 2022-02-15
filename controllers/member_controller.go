@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
 	organiztion "better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/factory"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
 	"github.com/labstack/echo"

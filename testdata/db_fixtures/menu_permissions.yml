@@ -1,0 +1,7 @@
+- menu_entity_id: 1
+  permission_entity_id: 1
+- menu_entity_id: 1
+  permission_entity_id: 2
+- menu_entity_id: 2
+  permission_entity_id: 3
+

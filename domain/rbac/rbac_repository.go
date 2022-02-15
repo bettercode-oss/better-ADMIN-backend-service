@@ -144,6 +144,11 @@ func (roleRepository) FindById(ctx context.Context, id uint) (RoleEntity, error)
 
 func (roleRepository) Delete(ctx context.Context, entity RoleEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
+
+	if err := db.Model(&entity).Association("Permissions").Clear(); err != nil {
+		return err
+	}
+
 	if err := db.Save(entity).Error; err != nil {
 		return err
 	}

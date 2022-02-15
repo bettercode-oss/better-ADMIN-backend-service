@@ -3,10 +3,10 @@ package auth
 import (
 	"better-admin-backend-service/adapters"
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/factory"
 	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/factory"
 	"better-admin-backend-service/security"
 	"context"
 	"errors"
