@@ -7,4 +7,5 @@ const (
 	PermissionManageSystemSettings = "MANAGE_SYSTEM_SETTINGS"
 	PermissionNoteWebHooks         = "NOTE_WEB_HOOKS"
 	PermissionManageMenus          = "MANAGE_MENUS"
+	PermissionViewMonitoring       = "VIEW_MONITORING"
 )
