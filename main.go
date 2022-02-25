@@ -152,6 +152,7 @@ func main() {
 	controllers.OrganizationController{}.Init(e.Group("/api/organizations"))
 	controllers.WebHookController{}.Init(e.Group("/api/web-hooks"))
 	controllers.MenuController{}.Init(e.Group("/api/menus"))
+	controllers.MemberAccessLogController{}.Init(e.Group("/api/member-access-logs"))
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")
