@@ -6,6 +6,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/middlewares"
+	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
@@ -34,7 +35,7 @@ func (MenuController) CreateMenu(ctx echo.Context) error {
 
 	err := menu.MenuService{}.CreateMenu(ctx.Request().Context(), menuInformation)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusCreated)
@@ -43,7 +44,7 @@ func (MenuController) CreateMenu(ctx echo.Context) error {
 func (MenuController) GetMenus(ctx echo.Context) error {
 	allOfMenus, err := menu.MenuService{}.GetAllMenus(ctx.Request().Context())
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	menus := make([]dtos.MenuInformation, 0)
@@ -56,7 +57,7 @@ func (MenuController) GetMenus(ctx echo.Context) error {
 
 		parentMenuInformation := findParentMenuInformation(&menus, *entity.ParentMenuId)
 		if parentMenuInformation == nil {
-			return ctx.JSON(http.StatusInternalServerError, "not found parentMenuInformation")
+			return errors.New("not found parentMenuInformation")
 		}
 
 		if parentMenuInformation.SubMenus == nil {
@@ -105,7 +106,7 @@ func (MenuController) ChangePosition(ctx echo.Context) error {
 
 	err = menu.MenuService{}.ChangePosition(ctx.Request().Context(), uint(menuId), menuPosition)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -119,7 +120,7 @@ func (MenuController) DeleteMenu(ctx echo.Context) error {
 
 	err = menu.MenuService{}.DeleteMenu(ctx.Request().Context(), uint(menuId))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -143,7 +144,7 @@ func (MenuController) UpdateMenu(ctx echo.Context) error {
 	err = menu.MenuService{}.UpdateMenu(ctx.Request().Context(), uint(menuId), menuInformation)
 
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)

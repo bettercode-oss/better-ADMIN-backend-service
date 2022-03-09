@@ -9,7 +9,7 @@ import (
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/security"
 	"context"
-	"errors"
+	"github.com/go-errors/errors"
 	"github.com/mitchellh/mapstructure"
 )
 

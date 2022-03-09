@@ -15,7 +15,7 @@ type MemberInformation struct {
 	MemberRoles         []MemberRole         `json:"roles"`
 	MemberOrganizations []MemberOrganization `json:"organizations"`
 	CreatedAt           time.Time            `json:"createdAt"`
-	LastAccessAt        time.Time            `json:"lastAccessAt"`
+	LastAccessAt        *time.Time           `json:"lastAccessAt"`
 }
 
 type MemberRole struct {

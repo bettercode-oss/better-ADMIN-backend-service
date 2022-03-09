@@ -49,7 +49,7 @@ func (AccessControlController) CreatePermission(ctx echo.Context) error {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
 		}
 
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -60,7 +60,7 @@ func (AccessControlController) GetPermissions(ctx echo.Context) error {
 
 	permissionEntities, totalCount, err := rbac.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), nil, pageable)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	var permissions = make([]dtos.PermissionInformation, 0)
@@ -102,7 +102,7 @@ func (AccessControlController) UpdatePermission(ctx echo.Context) error {
 		if err == domain.ErrNonChangeable || err == domain.ErrDuplicated {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -119,7 +119,7 @@ func (AccessControlController) DeletePermission(ctx echo.Context) error {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -138,7 +138,7 @@ func (AccessControlController) CreateRole(ctx echo.Context) error {
 
 	err := rbac.RoleBasedAccessControlService{}.CreateRole(ctx.Request().Context(), role)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -149,7 +149,7 @@ func (AccessControlController) GetRoles(ctx echo.Context) error {
 
 	roleEntities, totalCount, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, pageable)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	var roleSummaries = make([]dtos.RoleSummary, 0)
@@ -191,7 +191,7 @@ func (AccessControlController) DeleteRole(ctx echo.Context) error {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -218,7 +218,7 @@ func (AccessControlController) UpdateRole(ctx echo.Context) error {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)

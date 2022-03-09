@@ -46,7 +46,7 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 			return ctx.JSON(http.StatusNotAcceptable, err.Error())
 		}
 
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	refreshToken, err := ctx.Cookie("refreshToken")
@@ -110,12 +110,12 @@ func (controller AuthController) RefreshAccessToken(ctx echo.Context) error {
 	accessToken, err := jwtAuthentication.RefreshAccessToken(refreshToken)
 
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	err = controller.logMemberAccessAtByToken(ctx.Request().Context(), refreshToken)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	result := map[string]string{}
@@ -154,7 +154,7 @@ func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) erro
 		if err == domain.ErrAuthentication {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	refreshToken, err := ctx.Cookie("refreshToken")

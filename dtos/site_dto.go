@@ -2,8 +2,8 @@ package dtos
 
 import (
 	"better-admin-backend-service/config"
-	"errors"
 	"fmt"
+	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 )
 

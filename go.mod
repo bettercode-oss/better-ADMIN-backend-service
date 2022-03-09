@@ -6,6 +6,7 @@ require (
 	github.com/bettercode-oss/rest v0.0.4
 	github.com/denisenkom/go-mssqldb v0.9.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/go-errors/errors v1.4.2
 	github.com/go-ldap/ldap/v3 v3.3.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-testfixtures/testfixtures/v3 v3.5.0

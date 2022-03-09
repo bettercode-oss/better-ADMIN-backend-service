@@ -5,7 +5,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
-	"errors"
+	"github.com/go-errors/errors"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +15,7 @@ type webHookRepository struct {
 func (webHookRepository) Create(ctx context.Context, entity *WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(entity).Error; err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	return nil
@@ -27,7 +27,7 @@ func (webHookRepository) FindAll(ctx context.Context, pageable dtos.Pageable) ([
 	var entities = make([]WebHookEntity, 0)
 	var totalCount int64
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Find(&entities).Error; err != nil {
-		return entities, totalCount, err
+		return entities, totalCount, errors.New(err)
 	}
 
 	return entities, totalCount, nil
@@ -43,7 +43,7 @@ func (webHookRepository) FindById(ctx context.Context, id uint) (WebHookEntity, 
 			return entity, domain.ErrNotFound
 		}
 
-		return entity, err
+		return entity, errors.New(err)
 	}
 
 	return entity, nil
@@ -52,15 +52,24 @@ func (webHookRepository) FindById(ctx context.Context, id uint) (WebHookEntity, 
 func (webHookRepository) Delete(ctx context.Context, entity WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(entity).Error; err != nil {
-		return err
+		return errors.New(err)
 	}
 
-	return db.Delete(&entity).Error
+	if err := db.Delete(&entity).Error; err != nil {
+		return errors.New(err)
+	}
+
+	return nil
 }
 
 func (webHookRepository) Save(ctx context.Context, entity WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
-	return db.Save(entity).Error
+
+	if err := db.Save(entity).Error; err != nil {
+		return errors.New(err)
+	}
+
+	return nil
 }
 
 func (webHookRepository) FindLast(ctx context.Context) (WebHookEntity, error) {
@@ -73,7 +82,7 @@ func (webHookRepository) FindLast(ctx context.Context) (WebHookEntity, error) {
 			return entity, domain.ErrNotFound
 		}
 
-		return entity, err
+		return entity, errors.New(err)
 	}
 
 	return entity, nil

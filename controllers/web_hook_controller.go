@@ -34,7 +34,7 @@ func (WebHookController) CreateWebHook(ctx echo.Context) error {
 
 	err := webhook.WebHookService{}.CreateWebHook(ctx.Request().Context(), webHookInformation)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusCreated, nil)
@@ -45,7 +45,7 @@ func (WebHookController) GetWebHooks(ctx echo.Context) error {
 
 	entities, totalCount, err := webhook.WebHookService{}.GetWebHooks(ctx.Request().Context(), pageable)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	var webHooks = make([]dtos.WebHookInformation, 0)
@@ -73,7 +73,7 @@ func (WebHookController) DeleteWebHook(ctx echo.Context) error {
 
 	err = webhook.WebHookService{}.DeleteWebHook(ctx.Request().Context(), uint(webHookId))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -87,7 +87,11 @@ func (WebHookController) GetWebHook(ctx echo.Context) error {
 
 	entity, err := webhook.WebHookService{}.GetWebHook(ctx.Request().Context(), uint(webHookId))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusBadRequest, err.Error())
+		}
+
+		return err
 	}
 
 	webHookDetails := dtos.WebHookDetails{
@@ -118,7 +122,7 @@ func (WebHookController) UpdateWebHook(ctx echo.Context) error {
 
 	err = webhook.WebHookService{}.UpdateWebHook(ctx.Request().Context(), uint(webHookId), webHookInformation)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -144,7 +148,7 @@ func (WebHookController) NoteMessage(ctx echo.Context) error {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)

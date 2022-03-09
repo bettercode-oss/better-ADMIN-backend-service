@@ -5,6 +5,7 @@ import (
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
+	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -38,7 +39,7 @@ func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {
 
 	service := site.SiteService{}
 	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyDoorayLogin, setting); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -51,7 +52,7 @@ func (controller SiteController) GetDoorayLoginSetting(ctx echo.Context) error {
 			return ctx.JSON(http.StatusOK, dtos.DoorayLoginSetting{})
 		}
 
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, setting)
@@ -61,7 +62,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 	settings, err := site.SiteService{}.GetSettings(ctx.Request().Context())
 
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	summary := dtos.SiteSettingsSummary{}
@@ -71,7 +72,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var doorayLoginSetting dtos.DoorayLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &doorayLoginSetting)
 			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, err.Error())
+				return errors.New(err)
 			}
 
 			if *doorayLoginSetting.Used {
@@ -83,7 +84,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var googleWorkspaceSetting dtos.GoogleWorkspaceLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &googleWorkspaceSetting)
 			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, err.Error())
+				return errors.New(err)
 			}
 
 			if *googleWorkspaceSetting.Used {
@@ -102,7 +103,7 @@ func (SiteController) GetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
 			return ctx.JSON(http.StatusOK, dtos.GoogleWorkspaceLoginSetting{})
 		}
 
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, setting)
@@ -121,7 +122,7 @@ func (SiteController) SetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
 
 	service := site.SiteService{}
 	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyGoogleWorkspaceLogin, setting); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)

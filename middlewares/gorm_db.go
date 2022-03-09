@@ -31,7 +31,9 @@ func GORMDb(db *gorm.DB) echo.MiddlewareFunc {
 				c.SetRequest(req.WithContext(ctx))
 
 				if err := next(c); err != nil {
-					tx.Rollback()
+					if err := tx.Rollback().Error; err != nil {
+						log.Error("database rollback error", err.Error())
+					}
 					return err
 				}
 				if c.Response().Status >= 500 {

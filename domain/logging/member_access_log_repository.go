@@ -4,6 +4,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
+	"github.com/go-errors/errors"
 )
 
 type memberAccessLogRepository struct {
@@ -12,7 +13,7 @@ type memberAccessLogRepository struct {
 func (memberAccessLogRepository) Create(ctx context.Context, entity MemberAccessLogEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
-		return err
+		return errors.New(err)
 	}
 	return nil
 }
@@ -32,7 +33,7 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 	var totalCount int64
 
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Order("id desc").Find(&entities).Error; err != nil {
-		return entities, totalCount, err
+		return entities, totalCount, errors.New(err)
 	}
 
 	return entities, totalCount, nil
