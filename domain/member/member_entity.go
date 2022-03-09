@@ -6,7 +6,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
-	"errors"
+	"github.com/go-errors/errors"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"time"
@@ -36,7 +36,7 @@ type MemberEntity struct {
 	GoogleMail     string `gorm:"type:varchar(50)"`
 	Picture        string `gorm:"type:varchar(1000)"`
 	UpdatedBy      uint
-	LastAccessAt   time.Time
+	LastAccessAt   *time.Time
 	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
@@ -188,7 +188,8 @@ func (m MemberEntity) GetCandidateId() string {
 }
 
 func (m *MemberEntity) UpdateLastAccessAt() {
-	m.LastAccessAt = time.Now()
+	now := time.Now()
+	m.LastAccessAt = &now
 }
 
 func NewMemberEntityFromSignUp(signUp dtos.MemberSignUp) (MemberEntity, error) {

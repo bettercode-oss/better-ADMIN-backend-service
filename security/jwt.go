@@ -3,8 +3,8 @@ package security
 import (
 	"better-admin-backend-service/config"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/go-errors/errors"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -20,7 +20,7 @@ type JwtAuthentication struct {
 func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	claimMap, err := claim.ConvertMap()
 	if err != nil {
-		return JwtToken{}, err
+		return JwtToken{}, errors.New(err)
 	}
 
 	accessTokenClaims := jwt.MapClaims{}
@@ -32,7 +32,7 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
 	if err != nil {
-		return JwtToken{}, err
+		return JwtToken{}, errors.New(err)
 	}
 
 	refreshTokenClaims := jwt.MapClaims{}
@@ -43,6 +43,10 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	refreshTokenClaims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
+	if err != nil {
+		return JwtToken{}, errors.New(err)
+	}
+
 	return JwtToken{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -52,7 +56,7 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 func (JwtAuthentication) GenerateJwtAccessTokenNeverExpired(claim UserClaim) (string, error) {
 	claimMap, err := claim.ConvertMap()
 	if err != nil {
-		return "", err
+		return "", errors.New(err)
 	}
 
 	accessTokenClaims := jwt.MapClaims{}
@@ -63,7 +67,7 @@ func (JwtAuthentication) GenerateJwtAccessTokenNeverExpired(claim UserClaim) (st
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
 	if err != nil {
-		return "", err
+		return "", errors.New(err)
 	}
 
 	return accessToken, nil
@@ -140,12 +144,12 @@ func (c UserClaim) ConvertMap() (map[string]interface{}, error) {
 	bytes, err := json.Marshal(c)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	var resultMap map[string]interface{}
 	if err := json.Unmarshal(bytes, &resultMap); err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	return resultMap, nil
@@ -154,12 +158,12 @@ func (c UserClaim) ConvertMap() (map[string]interface{}, error) {
 func NewUserClaim(mapUserClaim map[string]interface{}) (UserClaim, error) {
 	bytes, err := json.Marshal(mapUserClaim)
 	if err != nil {
-		return UserClaim{}, err
+		return UserClaim{}, errors.New(err)
 	}
 
 	var claim UserClaim
 	if err := json.Unmarshal(bytes, &claim); err != nil {
-		return UserClaim{}, err
+		return UserClaim{}, errors.New(err)
 	}
 
 	return claim, nil

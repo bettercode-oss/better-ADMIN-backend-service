@@ -6,6 +6,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/middlewares"
+	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
@@ -43,7 +44,7 @@ func (controller OrganizationController) CreateOrganization(ctx echo.Context) er
 
 	err := organization.OrganizationService{}.CreateOrganization(ctx.Request().Context(), organizationInformation)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -52,7 +53,7 @@ func (controller OrganizationController) CreateOrganization(ctx echo.Context) er
 func (controller OrganizationController) GetOrganizations(ctx echo.Context) error {
 	allOfOrganizations, err := organization.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), nil)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	organizations := make([]dtos.OrganizationInformation, 0)
@@ -65,7 +66,7 @@ func (controller OrganizationController) GetOrganizations(ctx echo.Context) erro
 
 		parentOrganizationInformation := findParentOrganizationInformation(&organizations, *entity.ParentOrganizationID)
 		if parentOrganizationInformation == nil {
-			return ctx.JSON(http.StatusInternalServerError, "not found parentOrganizationInformation")
+			return errors.New("not found parentOrganizationInformation")
 		}
 
 		if parentOrganizationInformation.SubOrganizations == nil {
@@ -108,7 +109,7 @@ func (OrganizationController) ChangePosition(ctx echo.Context) error {
 	parentOrganizationId := requestBody["parentOrganizationId"]
 	err = organization.OrganizationService{}.ChangePosition(ctx.Request().Context(), uint(organizationId), parentOrganizationId)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -122,7 +123,7 @@ func (controller OrganizationController) DeleteOrganization(ctx echo.Context) er
 
 	err = organization.OrganizationService{}.DeleteOrganization(ctx.Request().Context(), uint(organizationId))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -145,7 +146,7 @@ func (OrganizationController) AssignRoles(ctx echo.Context) error {
 
 	err = organization.OrganizationService{}.AssignRoles(ctx.Request().Context(), uint(organizationId), organizationAssignRole)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -168,7 +169,7 @@ func (OrganizationController) AssignMembers(ctx echo.Context) error {
 
 	err = organization.OrganizationService{}.AssignMembers(ctx.Request().Context(), uint(organizationId), organizationAssignMember)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -191,7 +192,7 @@ func (OrganizationController) ChangeOrganizationName(ctx echo.Context) error {
 
 	err = organization.OrganizationService{}.ChangeOrganizationName(ctx.Request().Context(), uint(organizationId), organizationInformation.Name)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, nil)

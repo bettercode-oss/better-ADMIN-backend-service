@@ -38,7 +38,7 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 	memberEntity, err := member.MemberService{}.GetMemberById(ctx.Request().Context(), userClaim.Id)
 	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx.Request().Context(), memberEntity)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	memberInformation := dtos.CurrentMember{
@@ -76,7 +76,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 
 	memberEntities, totalCount, err := member.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	memberIds := make([]uint, 0)
@@ -87,6 +87,9 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 	filters = map[string]interface{}{}
 	filters["memberIds"] = memberIds
 	organizationsOfMembers, err := organiztion.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
+	if err != nil {
+		return err
+	}
 
 	var members = make([]dtos.MemberInformation, 0)
 	for _, entity := range memberEntities {
@@ -158,7 +161,7 @@ func (MemberController) AssignRole(ctx echo.Context) error {
 
 	err = member.MemberService{}.AssignRole(ctx.Request().Context(), uint(memberId), assignRole)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -172,7 +175,7 @@ func (MemberController) GetMember(ctx echo.Context) error {
 
 	memberEntity, err := member.MemberService{}.GetMember(ctx.Request().Context(), uint(memberId))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	var roles = make([]dtos.MemberRole, 0)
@@ -208,7 +211,7 @@ func (MemberController) SignUpMember(ctx echo.Context) error {
 		if err == domain.ErrDuplicated {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusCreated, nil)
@@ -225,7 +228,7 @@ func (MemberController) ApproveMember(ctx echo.Context) error {
 		if err == domain.ErrAlreadyApproved {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -255,7 +258,7 @@ func (MemberController) GetSearchFilters(ctx echo.Context) error {
 
 	allRoles, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, dtos.Pageable{Page: 0})
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	roleSearchFilter := dtos.SearchFilter{
@@ -285,7 +288,7 @@ func (MemberController) RejectMember(ctx echo.Context) error {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)

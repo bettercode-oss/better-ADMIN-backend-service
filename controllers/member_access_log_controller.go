@@ -37,7 +37,7 @@ func (MemberAccessLogController) LogMemberAccess(ctx echo.Context) error {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
 
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	return ctx.JSON(http.StatusCreated, nil)
@@ -64,7 +64,7 @@ func (MemberAccessLogController) GetMemberAccessLogs(ctx echo.Context) error {
 
 	accessLogEntities, totalCount, err := logging.MemberAccessLogService{}.GetMemberAccessLogs(ctx.Request().Context(), filters, pageable)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	var accessLogs = make([]dtos.MemberAccessLog, 0)
