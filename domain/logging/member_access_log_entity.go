@@ -64,6 +64,6 @@ func NewMemberAccessLogEntity(ctx context.Context, accessLog dtos.MemberAccessLo
 		Payload:          accessLog.Payload,
 		StatusCode:       accessLog.StatusCode,
 		IpAddress:        accessLog.IpAddress,
-		BrowserUserAgent: accessLog.BrowserUserAgent,
+		BrowserUserAgent: accessLog.GetHumanizeBrowserUserAgent(),
 	}, nil
 }
