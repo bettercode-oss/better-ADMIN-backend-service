@@ -195,5 +195,4 @@ func TestMemberAccessLogController_GetMemberAccessLogs_By_멤버_아이디(t *te
 	}
 
 	assert.Equal(t, expected, resp)
-
 }

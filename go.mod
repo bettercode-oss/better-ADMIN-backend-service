@@ -8,6 +8,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-errors/errors v1.4.2
 	github.com/go-ldap/ldap/v3 v3.3.0
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-testfixtures/testfixtures/v3 v3.5.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -20,6 +21,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mssola/user_agent v0.5.3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasttemplate v1.2.1 // indirect
