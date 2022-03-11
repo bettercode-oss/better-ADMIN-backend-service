@@ -78,6 +78,7 @@ func (MemberAccessLogController) GetMemberAccessLogs(ctx echo.Context) error {
 			Method:           entity.Method,
 			Parameters:       entity.Parameters,
 			Payload:          entity.Payload,
+			StatusCode:       entity.StatusCode,
 			IpAddress:        entity.IpAddress,
 			BrowserUserAgent: entity.BrowserUserAgent,
 			CreatedAt:        entity.CreatedAt,

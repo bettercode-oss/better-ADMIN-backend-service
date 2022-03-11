@@ -22,7 +22,8 @@ func TestMemberAccessLogController_LogMemberAccess_API_접근(t *testing.T) {
 		"url": "http://localhost:2016/api/members",
 		"method": "GET",
 		"parameters": "{\"page\":1,\"types\":\"dooray\"}",
-		"payload": "{\"name\":\"231312dsax\"}"
+		"payload": "{\"name\":\"231312dsax\"}",
+		"statusCode": 200
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/member-access-logs", strings.NewReader(requestBody))
@@ -133,6 +134,7 @@ func TestMemberAccessLogController_GetMemberAccessLogs(t *testing.T) {
 				"method":           "GET",
 				"parameters":       "{\"page\":1,\"types\":\"dooray\"}",
 				"payload":          "{\"name\":\"231312dsax\"}",
+				"statusCode":       float64(200),
 				"ipAddress":        "127.0.0.1",
 				"browserUserAgent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0",
 				"createdAt":        "1982-01-04T00:00:00Z",
@@ -183,6 +185,7 @@ func TestMemberAccessLogController_GetMemberAccessLogs_By_멤버_아이디(t *te
 				"method":           "GET",
 				"parameters":       "{\"page\":1,\"types\":\"dooray\"}",
 				"payload":          "{\"name\":\"231312dsax\"}",
+				"statusCode":       float64(200),
 				"ipAddress":        "127.0.0.1",
 				"browserUserAgent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0",
 				"createdAt":        "1982-01-04T00:00:00Z",

@@ -23,8 +23,9 @@ type MemberAccessLogEntity struct {
 	Method           *string `gorm:"type:varchar(10)"`
 	Parameters       *string `gorm:"type:varchar(2000)"`
 	Payload          *string `gorm:"type:varchar(2000)"`
-	IpAddress        string  `gorm:"type:varchar(20)"`
-	BrowserUserAgent string  `gorm:"type:varchar(2000)"`
+	StatusCode       *uint
+	IpAddress        string `gorm:"type:varchar(20)"`
+	BrowserUserAgent string `gorm:"type:varchar(2000)"`
 	CreatedAt        time.Time
 }
 
@@ -61,6 +62,7 @@ func NewMemberAccessLogEntity(ctx context.Context, accessLog dtos.MemberAccessLo
 		Method:           accessLog.Method,
 		Parameters:       accessLog.Parameters,
 		Payload:          accessLog.Payload,
+		StatusCode:       accessLog.StatusCode,
 		IpAddress:        accessLog.IpAddress,
 		BrowserUserAgent: accessLog.BrowserUserAgent,
 	}, nil
