@@ -14,6 +14,7 @@ type MemberAccessLog struct {
 	Method           *string   `json:"method,omitempty"`
 	Parameters       *string   `json:"parameters,omitempty"`
 	Payload          *string   `json:"payload,omitempty"`
+	StatusCode       *uint     `json:"statusCode,omitempty"`
 	IpAddress        string    `json:"ipAddress"`
 	BrowserUserAgent string    `json:"browserUserAgent"`
 	CreatedAt        time.Time `json:"createdAt"`
