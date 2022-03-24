@@ -156,5 +156,17 @@ func initializeDatabase(db *gorm.DB) error {
 		}
 	}
 
+	// 기본 settings
+	var siteSettingCount int64
+	db.Raw("SELECT count(*) FROM site_settings WHERE deleted_at is NULL").Scan(&siteSettingCount)
+
+	if siteSettingCount == 0 {
+		if err := db.Exec("INSERT INTO site_settings (id, created_at, updated_at, deleted_at, key, value, created_by, updated_by) "+
+			"VALUES (1,?,?,NULL,'member-access-log','{\"retentionDays\":30}', 1, 1)",
+			time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"better-admin-backend-service/helpers"
 	"context"
 	"github.com/go-errors/errors"
+	"time"
 )
 
 type memberAccessLogRepository struct {
@@ -37,4 +38,9 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 	}
 
 	return entities, totalCount, nil
+}
+
+func (memberAccessLogRepository) DeleteBeforeDate(ctx context.Context, date time.Time) error {
+	db := helpers.ContextHelper().GetDB(ctx)
+	return db.Where("created_at < ?", date).Delete(&MemberAccessLogEntity{}).Error
 }

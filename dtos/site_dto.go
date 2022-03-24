@@ -59,3 +59,11 @@ func (g GoogleWorkspaceLoginSetting) GetOAuthUri() string {
 	return fmt.Sprintf("%v?client_id=%v&redirect_uri=%v&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email&approval_prompt=force&access_type=offline",
 		config.Config.GoogleOAuth.OAuthUri, g.ClientId, g.RedirectUri)
 }
+
+type MemberAccessLogSetting struct {
+	RetentionDays uint `json:"retentionDays" validate:"required"`
+}
+
+func (m MemberAccessLogSetting) Validate(ctx echo.Context) error {
+	return ctx.Validate(m)
+}

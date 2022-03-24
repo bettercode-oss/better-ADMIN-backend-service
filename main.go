@@ -136,14 +136,11 @@ func main() {
 	e.Validator = &CustomValidator{validator: validator.New()}
 	e.Pre(echomiddleware.RemoveTrailingSlash())
 	e.Use(echomiddleware.Recover())
-
-	e.Use(middlewares.ErrorHandler())
-
 	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
 		AllowCredentials: true,
 	}))
-
 	e.Use(middlewares.JwtToken())
+	e.Use(middlewares.ErrorHandler())
 	e.Use(middlewares.GORMDb(gormDB))
 
 	e.HideBanner = true
