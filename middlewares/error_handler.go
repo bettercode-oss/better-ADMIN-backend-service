@@ -13,7 +13,11 @@ func ErrorHandler() echo.MiddlewareFunc {
 			err := next(c)
 
 			if err != nil {
-				log.Error(err.Error(), err.(*errors.Error).ErrorStack())
+				if _, ok := err.(*errors.Error); ok {
+					log.Error(err.Error(), err.(*errors.Error).ErrorStack())
+				} else {
+					log.Error(err.Error())
+				}
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
 

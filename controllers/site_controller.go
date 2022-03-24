@@ -20,9 +20,13 @@ func (controller SiteController) Init(g *echo.Group) {
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
 	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting,
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.PUT("/settings/google-workspace-login", controller.SetGoogleWorkspaceLoginSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
 	g.GET("/settings/google-workspace-login", controller.GetGoogleWorkspaceLoginSetting,
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.PUT("/settings/google-workspace-login", controller.SetGoogleWorkspaceLoginSetting,
+	g.PUT("/settings/member-access-logs", controller.SetMemberAccessLogSetting,
+		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.GET("/settings/member-access-logs", controller.GetMemberAccessLogSetting,
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
 }
 
@@ -126,4 +130,36 @@ func (SiteController) SetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+func (SiteController) SetMemberAccessLogSetting(ctx echo.Context) error {
+	var setting dtos.MemberAccessLogSetting
+
+	if err := ctx.Bind(&setting); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if err := setting.Validate(ctx); err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	service := site.SiteService{}
+	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyMemberAccessLog, setting); err != nil {
+		return err
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}
+
+func (SiteController) GetMemberAccessLogSetting(ctx echo.Context) error {
+	setting, err := site.SiteService{}.GetSettingWithKey(ctx.Request().Context(), site.SettingKeyMemberAccessLog)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusOK, dtos.MemberAccessLogSetting{})
+		}
+
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, setting)
 }

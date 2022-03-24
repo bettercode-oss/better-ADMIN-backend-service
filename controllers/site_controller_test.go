@@ -148,3 +148,53 @@ func TestSiteController_GetSettingsSummary(t *testing.T) {
 
 	assert.Equal(t, expected, actual)
 }
+
+func TestSiteController_SetMemberAccessLogSetting(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	requestBody := `{
+		"retentionDays": 30
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/member-access-logs", strings.NewReader(requestBody))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	userClaim := security.UserClaim{
+		Id: 1,
+	}
+	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+
+	// when
+	handleWithFilter(SiteController{}.SetMemberAccessLogSetting, ctx)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestSiteController_GetMemberAccessLogSetting(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/member-access-logs", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(SiteController{}.GetMemberAccessLogSetting, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"retentionDays": float64(30),
+	}
+
+	assert.Equal(t, expected, actual)
+}

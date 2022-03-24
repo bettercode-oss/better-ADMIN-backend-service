@@ -9,6 +9,7 @@ type MemberAccessLogService struct {
 }
 
 func (MemberAccessLogService) LogMemberAccess(ctx context.Context, accessLog dtos.MemberAccessLog) error {
+	LogCleanupService().cleanupDaily(ctx)
 	entity, err := NewMemberAccessLogEntity(ctx, accessLog)
 	if err != nil {
 		return err
@@ -19,4 +20,8 @@ func (MemberAccessLogService) LogMemberAccess(ctx context.Context, accessLog dto
 
 func (MemberAccessLogService) GetMemberAccessLogs(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]MemberAccessLogEntity, int64, error) {
 	return memberAccessLogRepository{}.FindAll(ctx, filters, pageable)
+}
+
+func (service MemberAccessLogService) cleanUpLog() {
+
 }
