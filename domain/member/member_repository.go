@@ -6,7 +6,7 @@ import (
 	"better-admin-backend-service/helpers"
 	"context"
 	"fmt"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,7 +26,7 @@ func (r memberRepository) FindBySignId(ctx context.Context, signId string) (Memb
 			return memberEntity, domain.ErrNotFound
 		}
 
-		return memberEntity, errors.New(err)
+		return memberEntity, errors.Wrap(err, "db error")
 	}
 
 	return memberEntity, nil
@@ -44,7 +44,7 @@ func (memberRepository) FindByDoorayId(ctx context.Context, doorayId string) (Me
 			return memberEntity, domain.ErrNotFound
 		}
 
-		return memberEntity, errors.New(err)
+		return memberEntity, errors.Wrap(err, "db error")
 	}
 
 	return memberEntity, nil
@@ -53,7 +53,7 @@ func (memberRepository) FindByDoorayId(ctx context.Context, doorayId string) (Me
 func (memberRepository) Create(ctx context.Context, entity *MemberEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 	return nil
 }
@@ -68,7 +68,7 @@ func (memberRepository) FindById(ctx context.Context, id uint) (MemberEntity, er
 			return memberEntity, domain.ErrNotFound
 		}
 
-		return memberEntity, errors.New(err)
+		return memberEntity, errors.Wrap(err, "db error")
 	}
 
 	return memberEntity, nil
@@ -109,7 +109,7 @@ func (memberRepository) FindAll(ctx context.Context, filters map[string]interfac
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).
 		Preload("Roles.Permissions").Preload(clause.Associations).
 		Find(&entities).Error; err != nil {
-		return entities, totalCount, errors.New(err)
+		return entities, totalCount, errors.Wrap(err, "db error")
 	}
 
 	return entities, totalCount, nil
@@ -119,11 +119,11 @@ func (memberRepository) Save(ctx context.Context, entity *MemberEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(entity).Association("Roles").Replace(entity.Roles); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil
@@ -141,7 +141,7 @@ func (memberRepository) FindByGoogleId(ctx context.Context, googleId string) (Me
 			return memberEntity, domain.ErrNotFound
 		}
 
-		return memberEntity, errors.New(err)
+		return memberEntity, errors.Wrap(err, "db error")
 	}
 
 	return memberEntity, nil
@@ -151,11 +151,11 @@ func (memberRepository) Delete(ctx context.Context, entity MemberEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Delete(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil

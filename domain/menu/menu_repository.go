@@ -4,7 +4,7 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/helpers"
 	"context"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"reflect"
@@ -16,7 +16,7 @@ type menuRepository struct {
 func (menuRepository) Create(ctx context.Context, entity MenuEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil
@@ -39,7 +39,7 @@ func (menuRepository) FindAll(ctx context.Context, filters map[string]interface{
 
 	var entities = make([]MenuEntity, 0)
 	if err := db.Order("parent_menu_id asc").Order("sequence asc").Preload(clause.Associations).Find(&entities).Error; err != nil {
-		return entities, errors.New(err)
+		return entities, errors.Wrap(err, "db error")
 	}
 
 	return entities, nil
@@ -54,7 +54,7 @@ func (menuRepository) FindById(ctx context.Context, id uint) (MenuEntity, error)
 			return entity, domain.ErrNotFound
 		}
 
-		return entity, errors.New(err)
+		return entity, errors.Wrap(err, "db error")
 	}
 
 	return entity, nil
@@ -64,11 +64,11 @@ func (menuRepository) Save(ctx context.Context, entity *MenuEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(entity).Association("Permissions").Replace(entity.Permissions); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil
@@ -81,11 +81,11 @@ func (menuRepository) Delete(ctx context.Context, entity MenuEntity) error {
 	}
 
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Delete(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil

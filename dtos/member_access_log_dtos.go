@@ -2,9 +2,9 @@ package dtos
 
 import (
 	"encoding/json"
-	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 	"github.com/mssola/user_agent"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -50,7 +50,7 @@ func (m MemberAccessLog) GetHumanizeBrowserUserAgent() string {
 
 	jsonString, err := json.Marshal(humanizeUserAgent)
 	if err != nil {
-		log.Error(errors.New(err))
+		log.Error(errors.Wrap(err, "json marshal error"))
 		return ""
 	}
 

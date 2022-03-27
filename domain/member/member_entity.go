@@ -6,7 +6,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"time"

@@ -1,8 +1,8 @@
 package adapters
 
 import (
-	"github.com/go-errors/errors"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -72,7 +72,7 @@ func (w webSocketConnection) SendMessage(webSocketId string, msg interface{}) er
 	}
 
 	if err := w.connections[webSocketId].WriteJSON(msg); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "websocket send message error")
 	}
 
 	return nil
@@ -81,7 +81,7 @@ func (w webSocketConnection) SendMessage(webSocketId string, msg interface{}) er
 func (w webSocketConnection) BroadcastMessage(msg interface{}) error {
 	for _, conn := range w.connections {
 		if err := conn.WriteJSON(msg); err != nil {
-			return errors.New(err)
+			return errors.Wrap(err, "websocket BroadcastMessage error")
 		}
 	}
 
