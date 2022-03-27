@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/bettercode-oss/rest v0.0.4
-	github.com/go-errors/errors v1.4.2
 	github.com/go-ldap/ldap/v3 v3.3.0
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-playground/validator/v10 v10.4.1
@@ -18,6 +17,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/mssola/user_agent v0.5.3
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/wesovilabs/koazee v0.0.5

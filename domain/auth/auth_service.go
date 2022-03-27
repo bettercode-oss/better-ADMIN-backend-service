@@ -9,8 +9,8 @@ import (
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/security"
 	"context"
-	"github.com/go-errors/errors"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 )
 
 type AuthService struct {

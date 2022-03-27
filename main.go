@@ -140,8 +140,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 	e.Use(middlewares.JwtToken())
-	e.Use(middlewares.ErrorHandler())
 	e.Use(middlewares.GORMDb(gormDB))
+	e.HTTPErrorHandler = customHTTPErrorHandler
 
 	e.HideBanner = true
 
@@ -177,4 +177,29 @@ func connectWebSocket(ctx echo.Context) error {
 	adapters.WebSocketAdapter().AddConnection(webSocketId, ws)
 
 	return nil
+}
+
+func customHTTPErrorHandler(err error, c echo.Context) {
+	var (
+		code = http.StatusInternalServerError
+		msg  interface{}
+	)
+
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		msg = he.Message
+	} else {
+		msg = http.StatusText(code)
+	}
+
+	if _, ok := msg.(string); ok {
+		msg = map[string]interface{}{"message": msg}
+	}
+
+	if code == http.StatusInternalServerError {
+		log.Errorf("%+v", err)
+		c.String(code, "Internal Server Error")
+	} else {
+		c.JSON(code, msg)
+	}
 }

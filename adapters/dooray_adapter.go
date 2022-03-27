@@ -6,8 +6,8 @@ import (
 	"better-admin-backend-service/dtos"
 	"fmt"
 	"github.com/bettercode-oss/rest"
-	"github.com/go-errors/errors"
 	"github.com/go-ldap/ldap/v3"
+	"github.com/pkg/errors"
 )
 
 type DoorayAdapter struct {
@@ -16,14 +16,14 @@ type DoorayAdapter struct {
 func (DoorayAdapter) Authenticate(doorayDomain, token, signId, password string) (dtos.DoorayMember, error) {
 	ldapConn, err := ldap.DialURL(config.Config.Dooray.LdapDialUrl)
 	if err != nil {
-		return dtos.DoorayMember{}, errors.New(err)
+		return dtos.DoorayMember{}, errors.Wrap(err, "ldap conn error")
 	}
 
 	defer ldapConn.Close()
 
 	if err := ldapConn.Bind(fmt.Sprint(fmt.Sprintf("%s\\", doorayDomain), signId), password); err != nil {
 		if ldap.IsErrorWithCode(err, ldap.ErrorNetwork) || err.Error() == "ldap: connection timed out" {
-			return dtos.DoorayMember{}, errors.New(err)
+			return dtos.DoorayMember{}, errors.Wrap(err, "ldap network error")
 		}
 
 		return dtos.DoorayMember{}, domain.ErrAuthentication
@@ -39,7 +39,7 @@ func (DoorayAdapter) Authenticate(doorayDomain, token, signId, password string) 
 		Get(fmt.Sprintf("https://api.dooray.com/common/v1/members?userCode=%s", signId))
 
 	if err != nil {
-		return dtos.DoorayMember{}, errors.New(err)
+		return dtos.DoorayMember{}, errors.Wrap(err, "find dooray member error")
 	}
 
 	resultHeader := result["header"].(map[string]interface{})

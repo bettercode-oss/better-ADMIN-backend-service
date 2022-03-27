@@ -4,7 +4,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type memberAccessLogRepository struct {
 func (memberAccessLogRepository) Create(ctx context.Context, entity MemberAccessLogEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 	return nil
 }
@@ -34,7 +34,7 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 	var totalCount int64
 
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Order("id desc").Find(&entities).Error; err != nil {
-		return entities, totalCount, errors.New(err)
+		return entities, totalCount, errors.Wrap(err, "db error")
 	}
 
 	return entities, totalCount, nil
@@ -42,5 +42,8 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 
 func (memberAccessLogRepository) DeleteBeforeDate(ctx context.Context, date time.Time) error {
 	db := helpers.ContextHelper().GetDB(ctx)
-	return db.Where("created_at < ?", date).Delete(&MemberAccessLogEntity{}).Error
+	if err := db.Where("created_at < ?", date).Delete(&MemberAccessLogEntity{}).Error; err != nil {
+		return errors.Wrap(err, "db error")
+	}
+	return nil
 }

@@ -3,8 +3,8 @@ package dtos
 import (
 	"better-admin-backend-service/config"
 	"fmt"
-	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
+	"github.com/pkg/errors"
 )
 
 type DoorayLoginSetting struct {

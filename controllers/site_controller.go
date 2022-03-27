@@ -5,9 +5,9 @@ import (
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
-	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -76,7 +76,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var doorayLoginSetting dtos.DoorayLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &doorayLoginSetting)
 			if err != nil {
-				return errors.New(err)
+				return errors.Wrap(err, "map to struct decode error")
 			}
 
 			if *doorayLoginSetting.Used {
@@ -88,7 +88,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var googleWorkspaceSetting dtos.GoogleWorkspaceLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &googleWorkspaceSetting)
 			if err != nil {
-				return errors.New(err)
+				return errors.Wrap(err, "map to struct decode error")
 			}
 
 			if *googleWorkspaceSetting.Used {

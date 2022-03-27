@@ -6,8 +6,8 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/middlewares"
-	"github.com/go-errors/errors"
 	"github.com/labstack/echo"
+	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 )

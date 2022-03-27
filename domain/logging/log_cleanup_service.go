@@ -4,8 +4,8 @@ import (
 	"better-admin-backend-service/domain/site"
 	"better-admin-backend-service/dtos"
 	"context"
-	"github.com/go-errors/errors"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -48,7 +48,7 @@ func (logCleanupService) deleteLogs(ctx context.Context) error {
 
 	var memberAccessLogSetting dtos.MemberAccessLogSetting
 	if err := mapstructure.Decode(setting, &memberAccessLogSetting); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "map to struct decode error")
 	}
 
 	retentionDays := memberAccessLogSetting.RetentionDays

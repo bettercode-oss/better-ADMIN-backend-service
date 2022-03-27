@@ -4,7 +4,7 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/helpers"
 	"context"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"github.com/wesovilabs/koazee"
 	"gorm.io/gorm"
 )
@@ -15,7 +15,7 @@ type organizationRepository struct {
 func (organizationRepository) Create(ctx context.Context, entity OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil
@@ -31,7 +31,7 @@ func (organizationRepository) FindAll(ctx context.Context, filters map[string]in
 		Preload("Roles.Permissions").
 		Preload("Members").
 		Find(&entities).Error; err != nil {
-		return entities, errors.New(err)
+		return entities, errors.Wrap(err, "db error")
 	}
 
 	if filters != nil {
@@ -79,7 +79,7 @@ func (organizationRepository) FindById(ctx context.Context, id uint) (Organizati
 			return entity, domain.ErrNotFound
 		}
 
-		return entity, errors.New(err)
+		return entity, errors.Wrap(err, "db error")
 	}
 
 	return entity, nil
@@ -89,15 +89,15 @@ func (organizationRepository) Save(ctx context.Context, entity *OrganizationEnti
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(entity).Association("Roles").Replace(entity.Roles); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Model(entity).Association("Members").Replace(entity.Members); err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil
@@ -106,11 +106,11 @@ func (organizationRepository) Save(ctx context.Context, entity *OrganizationEnti
 func (organizationRepository) Delete(ctx context.Context, entity OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	if err := db.Delete(&entity).Error; err != nil {
-		return errors.New(err)
+		return errors.Wrap(err, "db error")
 	}
 
 	return nil

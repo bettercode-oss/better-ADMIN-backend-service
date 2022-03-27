@@ -3,7 +3,7 @@ package helpers
 import (
 	"better-admin-backend-service/security"
 	"context"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"sync"
 )
