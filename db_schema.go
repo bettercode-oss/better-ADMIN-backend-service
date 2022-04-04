@@ -4,7 +4,6 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/logging"
 	"better-admin-backend-service/domain/member"
-	"better-admin-backend-service/domain/menu"
 	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/domain/site"
@@ -20,7 +19,7 @@ func initializeDatabase(db *gorm.DB) error {
 	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{},
 		&rbac.RoleEntity{}, &organization.OrganizationEntity{},
 		&webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{},
-		menu.MenuEntity{}, &logging.MemberAccessLogEntity{}); err != nil {
+		&logging.MemberAccessLogEntity{}); err != nil {
 		return err
 	}
 
@@ -54,12 +53,7 @@ func initializeDatabase(db *gorm.DB) error {
 		}
 
 		if err := db.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			6, "pre-define", domain.PermissionManageMenus, "메뉴 관리 권한", time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			7, "pre-define", domain.PermissionViewMonitoring, "모니터링 권한", time.Now(), time.Now()).Error; err != nil {
+			6, "pre-define", domain.PermissionViewMonitoring, "모니터링 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 	}
@@ -73,7 +67,7 @@ func initializeDatabase(db *gorm.DB) error {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1), (1, 7)").Error; err != nil {
+		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1), (1, 6)").Error; err != nil {
 			return err
 		}
 
@@ -82,60 +76,7 @@ func initializeDatabase(db *gorm.DB) error {
 			return err
 		}
 
-		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3),(2, 4),(2, 6)").Error; err != nil {
-			return err
-		}
-	}
-
-	var menuCount int64
-	db.Raw("SELECT count(*) FROM menus WHERE deleted_at is NULL").Scan(&menuCount)
-
-	if menuCount == 0 {
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (1,?,?,NULL,'GNB1-22','ApartmentOutlined',NULL,0,NULL,1,1,0)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (2,?,?,NULL,'GNB2','BarcodeOutlined',NULL,0,NULL,1,1,1)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (3,?,?,NULL,'GNB3','ApartmentOutlined',NULL,1,NULL,1,1,2)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (4,?,?,NULL,'SNB1','ApiOutlined',NULL,0,1,1,1,0)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (5,?,?,NULL,'SNB2','CiCircleOutlined','/snb2',0,1,1,1,1)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (6,?,?,NULL,'Sub1','BranchesOutlined','/sub1',0,4,1,1,0)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (7,?,?,NULL,'Sub2','BulbOutlined','/sub2',0,4,1,1,1)",
-			time.Now(), time.Now()).Error; err != nil {
-			return err
-		}
-
-		if err := db.Exec("INSERT INTO menus (id,created_at,updated_at,deleted_at,name,icon,link,disabled,parent_menu_id,created_by,updated_by,sequence) "+
-			"VALUES (8,?,?,NULL,'Sample','CarryOutOutlined','/sample-list',0,2,1,1,0)",
-			time.Now(), time.Now()).Error; err != nil {
+		if err := db.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3),(2, 4)").Error; err != nil {
 			return err
 		}
 	}
