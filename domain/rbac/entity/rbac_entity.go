@@ -1,4 +1,4 @@
-package rbac
+package entity
 
 import (
 	"better-admin-backend-service/domain"
@@ -48,18 +48,6 @@ func (p *PermissionEntity) Update(ctx context.Context, information dtos.Permissi
 
 	if p.Type == PreDefineTypeKey {
 		return domain.ErrNonChangeable
-	}
-
-	if p.Name != information.Name {
-		// 변경하려는 이름이 이미 존재하는지 여부 확인
-		exists, err := permissionRepository{}.ExistsByName(ctx, information.Name)
-		if err != nil {
-			return err
-		}
-
-		if exists == true {
-			return domain.ErrDuplicated
-		}
 	}
 
 	p.Name = information.Name
@@ -126,7 +114,7 @@ func (r RoleEntity) Deletable() error {
 	return nil
 }
 
-func (r *RoleEntity) Update(ctx context.Context, information dtos.RoleInformation) error {
+func (r *RoleEntity) Update(ctx context.Context, information dtos.RoleInformation, permissionEntities []PermissionEntity) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
@@ -139,39 +127,6 @@ func (r *RoleEntity) Update(ctx context.Context, information dtos.RoleInformatio
 	r.Name = information.Name
 	r.Description = information.Description
 	r.UpdatedBy = userClaim.Id
-
-	filters := map[string]interface{}{}
-	filters["permissionIds"] = information.AllowedPermissionIds
-	permissionEntities, _, err := permissionRepository{}.FindAll(ctx, filters, dtos.Pageable{Page: 0})
-	if err != nil {
-		return err
-	}
-
 	r.Permissions = permissionEntities
 	return nil
-}
-
-func NewRoleEntity(ctx context.Context, information dtos.RoleInformation) (RoleEntity, error) {
-	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
-	if err != nil {
-		return RoleEntity{}, err
-	}
-
-	role := RoleEntity{
-		Type:        UserDefineTypeKey,
-		Name:        information.Name,
-		Description: information.Description,
-		CreatedBy:   userClaim.Id,
-		UpdatedBy:   userClaim.Id,
-	}
-	filters := map[string]interface{}{}
-	filters["permissionIds"] = information.AllowedPermissionIds
-
-	permissionEntities, _, err := permissionRepository{}.FindAll(ctx, filters, dtos.Pageable{Page: 0})
-	if err != nil {
-		return role, err
-	}
-
-	role.Permissions = permissionEntities
-	return role, nil
 }

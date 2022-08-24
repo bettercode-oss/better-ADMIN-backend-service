@@ -1,8 +1,8 @@
-package organization
+package entity
 
 import (
-	"better-admin-backend-service/domain/member"
-	"better-admin-backend-service/domain/rbac"
+	memberEntity "better-admin-backend-service/domain/member/entity"
+	rbacEntity "better-admin-backend-service/domain/rbac/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -18,9 +18,9 @@ type OrganizationEntity struct {
 	Name                 string `gorm:"type:varchar(100);not null"`
 	ParentOrganizationID *uint
 	ParentOrganization   *OrganizationEntity
-	Path                 string                `gorm:"-"`
-	Roles                []rbac.RoleEntity     `gorm:"many2many:organization_roles;"`
-	Members              []member.MemberEntity `gorm:"many2many:organization_members;"`
+	Path                 string                      `gorm:"-"`
+	Roles                []rbacEntity.RoleEntity     `gorm:"many2many:organization_roles;"`
+	Members              []memberEntity.MemberEntity `gorm:"many2many:organization_members;"`
 	CreatedBy            uint
 	UpdatedBy            uint
 }
@@ -41,7 +41,7 @@ func (o *OrganizationEntity) ChangePosition(ctx context.Context, parentOrganizat
 	return nil
 }
 
-func (o *OrganizationEntity) generatePath(entities []OrganizationEntity) {
+func (o *OrganizationEntity) GeneratePath(entities []OrganizationEntity) {
 	fullPath := o.getPath(o.ID, entities, "")
 	o.Path = strings.Join(koazee.StreamOf(strings.Split(fullPath, "-")).Reverse().Out().Val().([]string), "-")
 }
@@ -64,16 +64,11 @@ func (o OrganizationEntity) getPath(targetId uint, organizations []OrganizationE
 	return ""
 }
 
-func (o OrganizationEntity) FindChildEntities(ctx context.Context) ([]OrganizationEntity, error) {
+func (o OrganizationEntity) FindChildEntities(entities []OrganizationEntity) ([]OrganizationEntity, error) {
 	childEntities := make([]OrganizationEntity, 0)
 
-	entities, err := organizationRepository{}.FindAll(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	for i := 0; i < len(entities); i++ {
-		entities[i].generatePath(entities)
+		entities[i].GeneratePath(entities)
 		if strings.Contains(entities[i].Path, strconv.FormatUint(uint64(o.ID), 10)) {
 			childEntities = append(childEntities, entities[i])
 		}
@@ -82,31 +77,15 @@ func (o OrganizationEntity) FindChildEntities(ctx context.Context) ([]Organizati
 	return childEntities, nil
 }
 
-func (o *OrganizationEntity) AssignRole(ctx context.Context, role dtos.OrganizationAssignRole) error {
+func (o *OrganizationEntity) AssignRole(ctx context.Context, roleEntities []rbacEntity.RoleEntity) error {
 	// 기존 역할을 덮어쓰기
-	filters := map[string]interface{}{}
-	filters["roleIds"] = role.RoleIds
-
-	findRoleEntities, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
-	if err != nil {
-		return err
-	}
-
-	o.Roles = findRoleEntities
+	o.Roles = roleEntities
 
 	return nil
 }
 
-func (o *OrganizationEntity) AssignMember(ctx context.Context, assignMember dtos.OrganizationAssignMember) error {
-	filters := map[string]interface{}{}
-	filters["memberIds"] = assignMember.MemberIds
-
-	findMemberEntities, _, err := member.MemberService{}.GetMembers(ctx, filters, dtos.Pageable{Page: 0})
-	if err != nil {
-		return err
-	}
-
-	o.Members = findMemberEntities
+func (o *OrganizationEntity) AssignMember(ctx context.Context, memberEntities []memberEntity.MemberEntity) error {
+	o.Members = memberEntities
 
 	return nil
 }

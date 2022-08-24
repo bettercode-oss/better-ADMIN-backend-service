@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/site"
+	"better-admin-backend-service/domain/site/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -41,8 +42,8 @@ func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	service := site.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyDoorayLogin, setting); err != nil {
+	service := services.SiteService{}
+	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyDoorayLogin, setting); err != nil {
 		return err
 	}
 
@@ -50,7 +51,7 @@ func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {
 }
 
 func (controller SiteController) GetDoorayLoginSetting(ctx echo.Context) error {
-	setting, err := site.SiteService{}.GetSettingWithKey(ctx.Request().Context(), site.SettingKeyDoorayLogin)
+	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyDoorayLogin)
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusOK, dtos.DoorayLoginSetting{})
@@ -63,7 +64,7 @@ func (controller SiteController) GetDoorayLoginSetting(ctx echo.Context) error {
 }
 
 func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
-	settings, err := site.SiteService{}.GetSettings(ctx.Request().Context())
+	settings, err := services.SiteService{}.GetSettings(ctx.Request().Context())
 
 	if err != nil {
 		return err
@@ -72,7 +73,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 	summary := dtos.SiteSettingsSummary{}
 
 	for _, setting := range settings {
-		if setting.Key == site.SettingKeyDoorayLogin {
+		if setting.Key == entity.SettingKeyDoorayLogin {
 			var doorayLoginSetting dtos.DoorayLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &doorayLoginSetting)
 			if err != nil {
@@ -84,7 +85,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			}
 		}
 
-		if setting.Key == site.SettingKeyGoogleWorkspaceLogin {
+		if setting.Key == entity.SettingKeyGoogleWorkspaceLogin {
 			var googleWorkspaceSetting dtos.GoogleWorkspaceLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &googleWorkspaceSetting)
 			if err != nil {
@@ -101,7 +102,7 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 }
 
 func (SiteController) GetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
-	setting, err := site.SiteService{}.GetSettingWithKey(ctx.Request().Context(), site.SettingKeyGoogleWorkspaceLogin)
+	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyGoogleWorkspaceLogin)
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusOK, dtos.GoogleWorkspaceLoginSetting{})
@@ -124,8 +125,8 @@ func (SiteController) SetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	service := site.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyGoogleWorkspaceLogin, setting); err != nil {
+	service := services.SiteService{}
+	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyGoogleWorkspaceLogin, setting); err != nil {
 		return err
 	}
 
@@ -143,8 +144,8 @@ func (SiteController) SetMemberAccessLogSetting(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	service := site.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), site.SettingKeyMemberAccessLog, setting); err != nil {
+	service := services.SiteService{}
+	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyMemberAccessLog, setting); err != nil {
 		return err
 	}
 
@@ -152,7 +153,7 @@ func (SiteController) SetMemberAccessLogSetting(ctx echo.Context) error {
 }
 
 func (SiteController) GetMemberAccessLogSetting(ctx echo.Context) error {
-	setting, err := site.SiteService{}.GetSettingWithKey(ctx.Request().Context(), site.SettingKeyMemberAccessLog)
+	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyMemberAccessLog)
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusOK, dtos.MemberAccessLogSetting{})

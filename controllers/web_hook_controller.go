@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/webhook"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
@@ -32,7 +32,7 @@ func (WebHookController) CreateWebHook(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err := webhook.WebHookService{}.CreateWebHook(ctx.Request().Context(), webHookInformation)
+	err := services.WebHookService{}.CreateWebHook(ctx.Request().Context(), webHookInformation)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (WebHookController) CreateWebHook(ctx echo.Context) error {
 func (WebHookController) GetWebHooks(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
 
-	entities, totalCount, err := webhook.WebHookService{}.GetWebHooks(ctx.Request().Context(), pageable)
+	entities, totalCount, err := services.WebHookService{}.GetWebHooks(ctx.Request().Context(), pageable)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (WebHookController) DeleteWebHook(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = webhook.WebHookService{}.DeleteWebHook(ctx.Request().Context(), uint(webHookId))
+	err = services.WebHookService{}.DeleteWebHook(ctx.Request().Context(), uint(webHookId))
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (WebHookController) GetWebHook(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	entity, err := webhook.WebHookService{}.GetWebHook(ctx.Request().Context(), uint(webHookId))
+	entity, err := services.WebHookService{}.GetWebHook(ctx.Request().Context(), uint(webHookId))
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -120,7 +120,7 @@ func (WebHookController) UpdateWebHook(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = webhook.WebHookService{}.UpdateWebHook(ctx.Request().Context(), uint(webHookId), webHookInformation)
+	err = services.WebHookService{}.UpdateWebHook(ctx.Request().Context(), uint(webHookId), webHookInformation)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (WebHookController) NoteMessage(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = webhook.WebHookService{}.NoteMessage(ctx.Request().Context(), uint(webHookId), message)
+	err = services.WebHookService{}.NoteMessage(ctx.Request().Context(), uint(webHookId), message)
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusBadRequest, err.Error())

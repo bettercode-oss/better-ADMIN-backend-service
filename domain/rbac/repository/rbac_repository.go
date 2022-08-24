@@ -1,7 +1,8 @@
-package rbac
+package repository
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/rbac/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -10,14 +11,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type permissionRepository struct {
+type PermissionRepository struct {
 }
 
-func (permissionRepository) Create(ctx context.Context, entity *PermissionEntity) error {
+func (PermissionRepository) Create(ctx context.Context, permissionEntity *entity.PermissionEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	var count int64
-	if err := db.Model(&PermissionEntity{}).Where("name = ?", entity.Name).Count(&count).Error; err != nil {
+	if err := db.Model(&entity.PermissionEntity{}).Where("name = ?", permissionEntity.Name).Count(&count).Error; err != nil {
 		return err
 	}
 
@@ -25,14 +26,14 @@ func (permissionRepository) Create(ctx context.Context, entity *PermissionEntity
 		return domain.ErrDuplicated
 	}
 
-	if err := db.Create(entity).Error; err != nil {
+	if err := db.Create(permissionEntity).Error; err != nil {
 		return errors.Wrap(err, "db error")
 	}
 	return nil
 }
 
-func (permissionRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]PermissionEntity, int64, error) {
-	db := helpers.ContextHelper().GetDB(ctx).Model(&PermissionEntity{})
+func (PermissionRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.PermissionEntity, int64, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&entity.PermissionEntity{})
 
 	if filters != nil {
 		for key, value := range filters {
@@ -42,7 +43,7 @@ func (permissionRepository) FindAll(ctx context.Context, filters map[string]inte
 		}
 	}
 
-	var entities = make([]PermissionEntity, 0)
+	var entities = make([]entity.PermissionEntity, 0)
 	var totalCount int64
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Find(&entities).Error; err != nil {
 		return entities, totalCount, errors.Wrap(err, "db error")
@@ -51,8 +52,8 @@ func (permissionRepository) FindAll(ctx context.Context, filters map[string]inte
 	return entities, totalCount, nil
 }
 
-func (permissionRepository) FindById(ctx context.Context, id uint) (PermissionEntity, error) {
-	var entity PermissionEntity
+func (PermissionRepository) FindById(ctx context.Context, id uint) (entity.PermissionEntity, error) {
+	var entity entity.PermissionEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
@@ -67,12 +68,12 @@ func (permissionRepository) FindById(ctx context.Context, id uint) (PermissionEn
 	return entity, nil
 }
 
-func (permissionRepository) Save(ctx context.Context, entity PermissionEntity) error {
+func (PermissionRepository) Save(ctx context.Context, entity entity.PermissionEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	return db.Save(entity).Error
 }
 
-func (permissionRepository) Delete(ctx context.Context, entity PermissionEntity) error {
+func (PermissionRepository) Delete(ctx context.Context, entity entity.PermissionEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -85,11 +86,11 @@ func (permissionRepository) Delete(ctx context.Context, entity PermissionEntity)
 	return nil
 }
 
-func (permissionRepository) ExistsByName(ctx context.Context, name string) (bool, error) {
+func (PermissionRepository) ExistsByName(ctx context.Context, name string) (bool, error) {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	var count int64
-	if err := db.Model(&PermissionEntity{}).Where("name = ?", name).Count(&count).Error; err != nil {
+	if err := db.Model(&entity.PermissionEntity{}).Where("name = ?", name).Count(&count).Error; err != nil {
 		return false, errors.Wrap(err, "db error")
 	}
 
@@ -100,10 +101,10 @@ func (permissionRepository) ExistsByName(ctx context.Context, name string) (bool
 	return false, nil
 }
 
-type roleRepository struct {
+type RoleRepository struct {
 }
 
-func (roleRepository) Create(ctx context.Context, entity *RoleEntity) error {
+func (RoleRepository) Create(ctx context.Context, entity *entity.RoleEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -111,8 +112,8 @@ func (roleRepository) Create(ctx context.Context, entity *RoleEntity) error {
 	return nil
 }
 
-func (roleRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]RoleEntity, int64, error) {
-	db := helpers.ContextHelper().GetDB(ctx).Model(&RoleEntity{})
+func (RoleRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.RoleEntity, int64, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&entity.RoleEntity{})
 
 	if filters != nil {
 		for key, value := range filters {
@@ -122,7 +123,7 @@ func (roleRepository) FindAll(ctx context.Context, filters map[string]interface{
 		}
 	}
 
-	var entities = make([]RoleEntity, 0)
+	var entities = make([]entity.RoleEntity, 0)
 	var totalCount int64
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Preload(clause.Associations).Find(&entities).Error; err != nil {
 		return entities, totalCount, errors.Wrap(err, "db error")
@@ -131,8 +132,8 @@ func (roleRepository) FindAll(ctx context.Context, filters map[string]interface{
 	return entities, totalCount, nil
 }
 
-func (roleRepository) FindById(ctx context.Context, id uint) (RoleEntity, error) {
-	var entity RoleEntity
+func (RoleRepository) FindById(ctx context.Context, id uint) (entity.RoleEntity, error) {
+	var entity entity.RoleEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
@@ -147,7 +148,7 @@ func (roleRepository) FindById(ctx context.Context, id uint) (RoleEntity, error)
 	return entity, nil
 }
 
-func (roleRepository) Delete(ctx context.Context, entity RoleEntity) error {
+func (RoleRepository) Delete(ctx context.Context, entity entity.RoleEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(&entity).Association("Permissions").Clear(); err != nil {
@@ -164,7 +165,7 @@ func (roleRepository) Delete(ctx context.Context, entity RoleEntity) error {
 	return nil
 }
 
-func (roleRepository) Save(ctx context.Context, entity *RoleEntity) error {
+func (RoleRepository) Save(ctx context.Context, entity *entity.RoleEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(entity).Association("Permissions").Replace(entity.Permissions); err != nil {

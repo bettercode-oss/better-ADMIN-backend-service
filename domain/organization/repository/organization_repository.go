@@ -1,7 +1,8 @@
-package organization
+package repository
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/organization/entity"
 	"better-admin-backend-service/helpers"
 	"context"
 	"github.com/pkg/errors"
@@ -9,10 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-type organizationRepository struct {
+type OrganizationRepository struct {
 }
 
-func (organizationRepository) Create(ctx context.Context, entity OrganizationEntity) error {
+func (OrganizationRepository) Create(ctx context.Context, entity entity.OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -21,10 +22,10 @@ func (organizationRepository) Create(ctx context.Context, entity OrganizationEnt
 	return nil
 }
 
-func (organizationRepository) FindAll(ctx context.Context, filters map[string]interface{}) ([]OrganizationEntity, error) {
-	db := helpers.ContextHelper().GetDB(ctx).Model(&OrganizationEntity{})
+func (OrganizationRepository) FindAll(ctx context.Context, filters map[string]interface{}) ([]entity.OrganizationEntity, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&entity.OrganizationEntity{})
 
-	var entities = make([]OrganizationEntity, 0)
+	var entities = make([]entity.OrganizationEntity, 0)
 
 	if err := db.Order("parent_organization_id asc").
 		Preload("Roles").
@@ -36,7 +37,7 @@ func (organizationRepository) FindAll(ctx context.Context, filters map[string]in
 
 	if filters != nil {
 		if filters["memberId"] != nil {
-			filteredEntities := make([]OrganizationEntity, 0)
+			filteredEntities := make([]entity.OrganizationEntity, 0)
 			for _, entity := range entities {
 				for _, member := range entity.Members {
 					if member.ID == filters["memberId"].(uint) {
@@ -50,7 +51,7 @@ func (organizationRepository) FindAll(ctx context.Context, filters map[string]in
 		}
 
 		if filters["memberIds"] != nil {
-			filteredEntities := make([]OrganizationEntity, 0)
+			filteredEntities := make([]entity.OrganizationEntity, 0)
 			stream := koazee.StreamOf(filters["memberIds"].([]uint))
 			for _, entity := range entities {
 				for _, member := range entity.Members {
@@ -70,8 +71,8 @@ func (organizationRepository) FindAll(ctx context.Context, filters map[string]in
 	return entities, nil
 }
 
-func (organizationRepository) FindById(ctx context.Context, id uint) (OrganizationEntity, error) {
-	var entity OrganizationEntity
+func (OrganizationRepository) FindById(ctx context.Context, id uint) (entity.OrganizationEntity, error) {
+	var entity entity.OrganizationEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Preload("Roles").Preload("Members").First(&entity, id).Error; err != nil {
@@ -85,7 +86,7 @@ func (organizationRepository) FindById(ctx context.Context, id uint) (Organizati
 	return entity, nil
 }
 
-func (organizationRepository) Save(ctx context.Context, entity *OrganizationEntity) error {
+func (OrganizationRepository) Save(ctx context.Context, entity *entity.OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Model(entity).Association("Roles").Replace(entity.Roles); err != nil {
@@ -103,7 +104,7 @@ func (organizationRepository) Save(ctx context.Context, entity *OrganizationEnti
 	return nil
 }
 
-func (organizationRepository) Delete(ctx context.Context, entity OrganizationEntity) error {
+func (OrganizationRepository) Delete(ctx context.Context, entity entity.OrganizationEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(entity).Error; err != nil {
 		return errors.Wrap(err, "db error")

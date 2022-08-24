@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/rbac"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
@@ -43,7 +43,7 @@ func (AccessControlController) CreatePermission(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err := rbac.RoleBasedAccessControlService{}.CreatePermission(ctx.Request().Context(), permission)
+	err := services.RoleBasedAccessControlService{}.CreatePermission(ctx.Request().Context(), permission)
 	if err != nil {
 		if err == domain.ErrDuplicated {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
@@ -58,7 +58,7 @@ func (AccessControlController) CreatePermission(ctx echo.Context) error {
 func (AccessControlController) GetPermissions(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
 
-	permissionEntities, totalCount, err := rbac.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), nil, pageable)
+	permissionEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), nil, pageable)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (AccessControlController) UpdatePermission(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = rbac.RoleBasedAccessControlService{}.UpdatePermission(ctx.Request().Context(), uint(permissionId), permission)
+	err = services.RoleBasedAccessControlService{}.UpdatePermission(ctx.Request().Context(), uint(permissionId), permission)
 	if err != nil {
 		if err == domain.ErrNonChangeable || err == domain.ErrDuplicated {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
@@ -114,7 +114,7 @@ func (AccessControlController) DeletePermission(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = rbac.RoleBasedAccessControlService{}.DeletePermission(ctx.Request().Context(), uint(permissionId))
+	err = services.RoleBasedAccessControlService{}.DeletePermission(ctx.Request().Context(), uint(permissionId))
 	if err != nil {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
@@ -136,7 +136,7 @@ func (AccessControlController) CreateRole(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err := rbac.RoleBasedAccessControlService{}.CreateRole(ctx.Request().Context(), role)
+	err := services.RoleBasedAccessControlService{}.CreateRole(ctx.Request().Context(), role)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (AccessControlController) CreateRole(ctx echo.Context) error {
 func (AccessControlController) GetRoles(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
 
-	roleEntities, totalCount, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, pageable)
+	roleEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, pageable)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (AccessControlController) DeleteRole(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = rbac.RoleBasedAccessControlService{}.DeleteRole(ctx.Request().Context(), uint(roleId))
+	err = services.RoleBasedAccessControlService{}.DeleteRole(ctx.Request().Context(), uint(roleId))
 	if err != nil {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
@@ -213,7 +213,7 @@ func (AccessControlController) UpdateRole(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = rbac.RoleBasedAccessControlService{}.UpdateRole(ctx.Request().Context(), uint(roleId), role)
+	err = services.RoleBasedAccessControlService{}.UpdateRole(ctx.Request().Context(), uint(roleId), role)
 	if err != nil {
 		if err == domain.ErrNonChangeable {
 			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})

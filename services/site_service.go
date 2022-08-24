@@ -1,7 +1,9 @@
-package site
+package services
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/site/entity"
+	"better-admin-backend-service/domain/site/repository"
 	"better-admin-backend-service/helpers"
 	"context"
 )
@@ -15,12 +17,12 @@ func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting in
 		return err
 	}
 
-	repository := siteSettingRepository{}
+	repository := repository.SiteSettingRepository{}
 	foundSettingEntity, err := repository.FindByKey(ctx, key)
 	if err != nil {
 		if err == domain.ErrNotFound {
 			// 설정 값이 없으므로 새로 추가
-			newSetting := SettingEntity{
+			newSetting := entity.SettingEntity{
 				Key:         key,
 				ValueObject: setting,
 				CreatedBy:   userClaim.Id,
@@ -37,13 +39,13 @@ func (SiteService) SetSettingWithKey(ctx context.Context, key string, setting in
 }
 
 func (SiteService) GetSettingWithKey(ctx context.Context, key string) (interface{}, error) {
-	settingEntity, err := siteSettingRepository{}.FindByKey(ctx, key)
+	settingEntity, err := repository.SiteSettingRepository{}.FindByKey(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 	return settingEntity.ValueObject, err
 }
 
-func (SiteService) GetSettings(ctx context.Context) ([]SettingEntity, error) {
-	return siteSettingRepository{}.FindAll(ctx)
+func (SiteService) GetSettings(ctx context.Context) ([]entity.SettingEntity, error) {
+	return repository.SiteSettingRepository{}.FindAll(ctx)
 }

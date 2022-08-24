@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/organization"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/factory"
 	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 	"net/http"
@@ -42,7 +42,7 @@ func (controller OrganizationController) CreateOrganization(ctx echo.Context) er
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err := organization.OrganizationService{}.CreateOrganization(ctx.Request().Context(), organizationInformation)
+	err := services.OrganizationService{}.CreateOrganization(ctx.Request().Context(), organizationInformation)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (controller OrganizationController) CreateOrganization(ctx echo.Context) er
 }
 
 func (controller OrganizationController) GetOrganizations(ctx echo.Context) error {
-	allOfOrganizations, err := organization.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), nil)
+	allOfOrganizations, err := services.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), nil)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (OrganizationController) ChangePosition(ctx echo.Context) error {
 	}
 
 	parentOrganizationId := requestBody["parentOrganizationId"]
-	err = organization.OrganizationService{}.ChangePosition(ctx.Request().Context(), uint(organizationId), parentOrganizationId)
+	err = services.OrganizationService{}.ChangePosition(ctx.Request().Context(), uint(organizationId), parentOrganizationId)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (controller OrganizationController) DeleteOrganization(ctx echo.Context) er
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = organization.OrganizationService{}.DeleteOrganization(ctx.Request().Context(), uint(organizationId))
+	err = services.OrganizationService{}.DeleteOrganization(ctx.Request().Context(), uint(organizationId))
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (OrganizationController) AssignRoles(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = organization.OrganizationService{}.AssignRoles(ctx.Request().Context(), uint(organizationId), organizationAssignRole)
+	err = services.OrganizationService{}.AssignRoles(ctx.Request().Context(), uint(organizationId), organizationAssignRole)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (OrganizationController) AssignMembers(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = organization.OrganizationService{}.AssignMembers(ctx.Request().Context(), uint(organizationId), organizationAssignMember)
+	err = services.OrganizationService{}.AssignMembers(ctx.Request().Context(), uint(organizationId), organizationAssignMember)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (OrganizationController) ChangeOrganizationName(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = organization.OrganizationService{}.ChangeOrganizationName(ctx.Request().Context(), uint(organizationId), organizationInformation.Name)
+	err = services.OrganizationService{}.ChangeOrganizationName(ctx.Request().Context(), uint(organizationId), organizationInformation.Name)
 	if err != nil {
 		return err
 	}
