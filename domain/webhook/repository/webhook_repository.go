@@ -1,7 +1,8 @@
-package webhook
+package repository
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/webhook/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -9,10 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-type webHookRepository struct {
+type WebHookRepository struct {
 }
 
-func (webHookRepository) Create(ctx context.Context, entity *WebHookEntity) error {
+func (WebHookRepository) Create(ctx context.Context, entity *entity.WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -21,10 +22,10 @@ func (webHookRepository) Create(ctx context.Context, entity *WebHookEntity) erro
 	return nil
 }
 
-func (webHookRepository) FindAll(ctx context.Context, pageable dtos.Pageable) ([]WebHookEntity, int64, error) {
-	db := helpers.ContextHelper().GetDB(ctx).Model(&WebHookEntity{})
+func (WebHookRepository) FindAll(ctx context.Context, pageable dtos.Pageable) ([]entity.WebHookEntity, int64, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&entity.WebHookEntity{})
 
-	var entities = make([]WebHookEntity, 0)
+	var entities = make([]entity.WebHookEntity, 0)
 	var totalCount int64
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Find(&entities).Error; err != nil {
 		return entities, totalCount, errors.Wrap(err, "db error")
@@ -33,8 +34,8 @@ func (webHookRepository) FindAll(ctx context.Context, pageable dtos.Pageable) ([
 	return entities, totalCount, nil
 }
 
-func (webHookRepository) FindById(ctx context.Context, id uint) (WebHookEntity, error) {
-	var entity WebHookEntity
+func (WebHookRepository) FindById(ctx context.Context, id uint) (entity.WebHookEntity, error) {
+	var entity entity.WebHookEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
@@ -49,7 +50,7 @@ func (webHookRepository) FindById(ctx context.Context, id uint) (WebHookEntity, 
 	return entity, nil
 }
 
-func (webHookRepository) Delete(ctx context.Context, entity WebHookEntity) error {
+func (WebHookRepository) Delete(ctx context.Context, entity entity.WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -62,7 +63,7 @@ func (webHookRepository) Delete(ctx context.Context, entity WebHookEntity) error
 	return nil
 }
 
-func (webHookRepository) Save(ctx context.Context, entity WebHookEntity) error {
+func (WebHookRepository) Save(ctx context.Context, entity entity.WebHookEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 
 	if err := db.Save(entity).Error; err != nil {
@@ -72,8 +73,8 @@ func (webHookRepository) Save(ctx context.Context, entity WebHookEntity) error {
 	return nil
 }
 
-func (webHookRepository) FindLast(ctx context.Context) (WebHookEntity, error) {
-	var entity WebHookEntity
+func (WebHookRepository) FindLast(ctx context.Context) (entity.WebHookEntity, error) {
+	var entity entity.WebHookEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 

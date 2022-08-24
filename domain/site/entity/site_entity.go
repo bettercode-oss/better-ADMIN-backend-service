@@ -1,4 +1,4 @@
-package site
+package entity
 
 import (
 	"encoding/json"

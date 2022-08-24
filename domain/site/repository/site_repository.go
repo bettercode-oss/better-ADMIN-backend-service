@@ -1,17 +1,18 @@
-package site
+package repository
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/site/entity"
 	"better-admin-backend-service/helpers"
 	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
-type siteSettingRepository struct {
+type SiteSettingRepository struct {
 }
 
-func (siteSettingRepository) Save(ctx context.Context, entity SettingEntity) error {
+func (SiteSettingRepository) Save(ctx context.Context, entity entity.SettingEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Save(&entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -20,12 +21,12 @@ func (siteSettingRepository) Save(ctx context.Context, entity SettingEntity) err
 	return nil
 }
 
-func (siteSettingRepository) FindByKey(ctx context.Context, key string) (SettingEntity, error) {
-	var setting SettingEntity
+func (SiteSettingRepository) FindByKey(ctx context.Context, key string) (entity.SettingEntity, error) {
+	var setting entity.SettingEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 
-	if err := db.Where(&SettingEntity{Key: key}).First(&setting).Error; err != nil {
+	if err := db.Where(&entity.SettingEntity{Key: key}).First(&setting).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return setting, domain.ErrNotFound
 		}
@@ -36,8 +37,8 @@ func (siteSettingRepository) FindByKey(ctx context.Context, key string) (Setting
 	return setting, nil
 }
 
-func (siteSettingRepository) FindAll(ctx context.Context) ([]SettingEntity, error) {
-	var settings []SettingEntity
+func (SiteSettingRepository) FindAll(ctx context.Context) ([]entity.SettingEntity, error) {
+	var settings []entity.SettingEntity
 
 	db := helpers.ContextHelper().GetDB(ctx)
 

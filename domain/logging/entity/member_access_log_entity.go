@@ -1,4 +1,4 @@
-package logging
+package entity
 
 import (
 	"better-admin-backend-service/domain"

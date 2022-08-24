@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"better-admin-backend-service/domain/logging"
-	"better-admin-backend-service/domain/member"
-	"better-admin-backend-service/domain/organization"
-	"better-admin-backend-service/domain/rbac"
-	"better-admin-backend-service/domain/site"
-	"better-admin-backend-service/domain/webhook"
+	entity6 "better-admin-backend-service/domain/logging/entity"
+	"better-admin-backend-service/domain/member/entity"
+	entity2 "better-admin-backend-service/domain/organization/entity"
+	entity5 "better-admin-backend-service/domain/rbac/entity"
+	entity4 "better-admin-backend-service/domain/site/entity"
+	entity3 "better-admin-backend-service/domain/webhook/entity"
 	"fmt"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,9 +17,9 @@ type DatabaseFixture struct {
 
 func (DatabaseFixture) setUpDefault() {
 	fmt.Println("Set up database test fixture")
-	gormDB.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{}, &rbac.RoleEntity{},
-		&organization.OrganizationEntity{}, &webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{},
-		&logging.MemberAccessLogEntity{})
+	gormDB.AutoMigrate(&entity.MemberEntity{}, &entity4.SettingEntity{}, &entity5.PermissionEntity{}, &entity5.RoleEntity{},
+		&entity2.OrganizationEntity{}, &entity3.WebHookEntity{}, &entity3.WebHookMessageEntity{},
+		&entity6.MemberAccessLogEntity{})
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {

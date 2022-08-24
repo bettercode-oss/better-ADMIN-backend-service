@@ -1,7 +1,8 @@
-package logging
+package services
 
 import (
-	"better-admin-backend-service/domain/site"
+	"better-admin-backend-service/domain/logging/repository"
+	"better-admin-backend-service/domain/site/entity"
 	"better-admin-backend-service/dtos"
 	"context"
 	"github.com/mitchellh/mapstructure"
@@ -41,7 +42,7 @@ func (service *logCleanupService) cleanupDaily(ctx context.Context) {
 }
 
 func (logCleanupService) deleteLogs(ctx context.Context) error {
-	setting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyMemberAccessLog)
+	setting, err := SiteService{}.GetSettingWithKey(ctx, entity.SettingKeyMemberAccessLog)
 	if err != nil {
 		return err
 	}
@@ -54,5 +55,5 @@ func (logCleanupService) deleteLogs(ctx context.Context) error {
 	retentionDays := memberAccessLogSetting.RetentionDays
 	beforeDateOfDeletion := time.Now().AddDate(0, 0, -int(retentionDays))
 
-	return memberAccessLogRepository{}.DeleteBeforeDate(ctx, beforeDateOfDeletion)
+	return repository.MemberAccessLogRepository{}.DeleteBeforeDate(ctx, beforeDateOfDeletion)
 }

@@ -1,7 +1,9 @@
-package webhook
+package services
 
 import (
 	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/webhook/entity"
+	"better-admin-backend-service/domain/webhook/repository"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -11,7 +13,7 @@ type WebHookService struct {
 }
 
 func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos.WebHookInformation) error {
-	repository := webHookRepository{}
+	repository := repository.WebHookRepository{}
 	lastEntity, err := repository.FindLast(ctx)
 	var nextId uint
 	if err != nil {
@@ -21,10 +23,10 @@ func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos
 			return err
 		}
 	} else {
-		nextId = lastEntity.nextId()
+		nextId = lastEntity.NextId()
 	}
 
-	entity, err := NewWebHookEntity(ctx, nextId, webHookInformation)
+	entity, err := entity.NewWebHookEntity(ctx, nextId, webHookInformation)
 	if err != nil {
 		return err
 	}
@@ -32,12 +34,12 @@ func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos
 	return repository.Create(ctx, &entity)
 }
 
-func (WebHookService) GetWebHooks(ctx context.Context, pageable dtos.Pageable) ([]WebHookEntity, int64, error) {
-	return webHookRepository{}.FindAll(ctx, pageable)
+func (WebHookService) GetWebHooks(ctx context.Context, pageable dtos.Pageable) ([]entity.WebHookEntity, int64, error) {
+	return repository.WebHookRepository{}.FindAll(ctx, pageable)
 }
 
 func (WebHookService) DeleteWebHook(ctx context.Context, webHookId uint) error {
-	repository := webHookRepository{}
+	repository := repository.WebHookRepository{}
 
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
@@ -53,12 +55,12 @@ func (WebHookService) DeleteWebHook(ctx context.Context, webHookId uint) error {
 	return repository.Delete(ctx, entity)
 }
 
-func (WebHookService) GetWebHook(ctx context.Context, webHookId uint) (WebHookEntity, error) {
-	return webHookRepository{}.FindById(ctx, webHookId)
+func (WebHookService) GetWebHook(ctx context.Context, webHookId uint) (entity.WebHookEntity, error) {
+	return repository.WebHookRepository{}.FindById(ctx, webHookId)
 }
 
 func (WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHookInformation dtos.WebHookInformation) error {
-	repository := webHookRepository{}
+	repository := repository.WebHookRepository{}
 
 	entity, err := repository.FindById(ctx, webHookId)
 	if err != nil {
@@ -74,7 +76,7 @@ func (WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHook
 }
 
 func (WebHookService) NoteMessage(ctx context.Context, webHookId uint, message dtos.WebHookMessage) error {
-	repository := webHookRepository{}
+	repository := repository.WebHookRepository{}
 	entity, err := repository.FindById(ctx, webHookId)
 	if err != nil {
 		return err

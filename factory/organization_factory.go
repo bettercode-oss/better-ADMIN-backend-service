@@ -1,11 +1,11 @@
 package factory
 
 import (
-	"better-admin-backend-service/domain/organization"
+	"better-admin-backend-service/domain/organization/entity"
 	"better-admin-backend-service/dtos"
 )
 
-func NewOrganizationInformationFromEntity(entity organization.OrganizationEntity) dtos.OrganizationInformation {
+func NewOrganizationInformationFromEntity(entity entity.OrganizationEntity) dtos.OrganizationInformation {
 	organizationInformation := dtos.OrganizationInformation{
 		Id:   entity.ID,
 		Name: entity.Name,

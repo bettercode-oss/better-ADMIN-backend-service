@@ -1,8 +1,8 @@
-package member
+package entity
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/rbac"
+	"better-admin-backend-service/domain/rbac/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -37,7 +37,7 @@ type MemberEntity struct {
 	Picture        string `gorm:"type:varchar(1000)"`
 	UpdatedBy      uint
 	LastAccessAt   *time.Time
-	Roles          []rbac.RoleEntity `gorm:"many2many:member_roles;"`
+	Roles          []entity.RoleEntity `gorm:"many2many:member_roles;"`
 }
 
 func (MemberEntity) TableName() string {
@@ -95,22 +95,14 @@ func (m MemberEntity) GetTypeName() string {
 	return ""
 }
 
-func (m *MemberEntity) AssignRole(ctx context.Context, role dtos.MemberAssignRole) error {
+func (m *MemberEntity) AssignRole(ctx context.Context, roleEntities []entity.RoleEntity) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
 	// 기존 역할을 덮어쓰기
-	filters := map[string]interface{}{}
-	filters["roleIds"] = role.RoleIds
-
-	findRoleEntities, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
-	if err != nil {
-		return err
-	}
-
-	m.Roles = findRoleEntities
+	m.Roles = roleEntities
 	m.UpdatedBy = userClaim.Id
 
 	return nil

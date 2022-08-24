@@ -2,12 +2,12 @@ package main
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/logging"
-	"better-admin-backend-service/domain/member"
-	"better-admin-backend-service/domain/organization"
-	"better-admin-backend-service/domain/rbac"
-	"better-admin-backend-service/domain/site"
-	"better-admin-backend-service/domain/webhook"
+	logging "better-admin-backend-service/domain/logging/entity"
+	member "better-admin-backend-service/domain/member/entity"
+	organization "better-admin-backend-service/domain/organization/entity"
+	rbac "better-admin-backend-service/domain/rbac/entity"
+	site "better-admin-backend-service/domain/site/entity"
+	webhook "better-admin-backend-service/domain/webhook/entity"
 	"fmt"
 	"gorm.io/gorm"
 	"time"

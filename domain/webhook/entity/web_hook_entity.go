@@ -1,4 +1,4 @@
-package webhook
+package entity
 
 import (
 	"better-admin-backend-service/adapters"
@@ -47,7 +47,7 @@ func (w *WebHookEntity) Update(ctx context.Context, information dtos.WebHookInfo
 	return nil
 }
 
-func (w WebHookEntity) nextId() uint {
+func (w WebHookEntity) NextId() uint {
 	return w.ID + 1
 }
 

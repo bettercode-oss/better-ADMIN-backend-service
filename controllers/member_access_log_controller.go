@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/logging"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"net/http"
 )
@@ -31,7 +31,7 @@ func (MemberAccessLogController) LogMemberAccess(ctx echo.Context) error {
 	accessLog.IpAddress = ReadUserIP(ctx.Request())
 	accessLog.BrowserUserAgent = ctx.Request().UserAgent()
 
-	err := logging.MemberAccessLogService{}.LogMemberAccess(ctx.Request().Context(), accessLog)
+	err := services.MemberAccessLogService{}.LogMemberAccess(ctx.Request().Context(), accessLog)
 	if err != nil {
 		if err == domain.ErrNotSupportedAccessLogType {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -62,7 +62,7 @@ func (MemberAccessLogController) GetMemberAccessLogs(ctx echo.Context) error {
 		filters["memberId"] = ctx.QueryParam("memberId")
 	}
 
-	accessLogEntities, totalCount, err := logging.MemberAccessLogService{}.GetMemberAccessLogs(ctx.Request().Context(), filters, pageable)
+	accessLogEntities, totalCount, err := services.MemberAccessLogService{}.GetMemberAccessLogs(ctx.Request().Context(), filters, pageable)
 	if err != nil {
 		return err
 	}

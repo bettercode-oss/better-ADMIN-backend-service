@@ -1,7 +1,11 @@
-package rbac
+package services
 
 import (
+	"better-admin-backend-service/domain"
+	"better-admin-backend-service/domain/rbac/entity"
+	"better-admin-backend-service/domain/rbac/repository"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/factory"
 	"better-admin-backend-service/helpers"
 	"context"
 )
@@ -10,35 +14,47 @@ type RoleBasedAccessControlService struct {
 }
 
 func (RoleBasedAccessControlService) CreatePermission(ctx context.Context, permissionInformation dtos.PermissionInformation) error {
-	permissionEntity, err := NewPermissionEntity(ctx, permissionInformation)
+	permissionEntity, err := entity.NewPermissionEntity(ctx, permissionInformation)
 	if err != nil {
 		return err
 	}
-	return permissionRepository{}.Create(ctx, &permissionEntity)
+	return repository.PermissionRepository{}.Create(ctx, &permissionEntity)
 }
 
-func (RoleBasedAccessControlService) GetPermissions(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]PermissionEntity, int64, error) {
-	return permissionRepository{}.FindAll(ctx, filters, pageable)
+func (RoleBasedAccessControlService) GetPermissions(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.PermissionEntity, int64, error) {
+	return repository.PermissionRepository{}.FindAll(ctx, filters, pageable)
 }
 
 func (RoleBasedAccessControlService) CreateRole(ctx context.Context, roleInformation dtos.RoleInformation) error {
-	roleEntity, err := NewRoleEntity(ctx, roleInformation)
+	roleEntity, err := factory.NewRoleEntity(ctx, roleInformation)
 	if err != nil {
 		return err
 	}
 
-	return roleRepository{}.Create(ctx, &roleEntity)
+	return repository.RoleRepository{}.Create(ctx, &roleEntity)
 }
 
-func (RoleBasedAccessControlService) GetRoles(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]RoleEntity, int64, error) {
-	return roleRepository{}.FindAll(ctx, filters, pageable)
+func (RoleBasedAccessControlService) GetRoles(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.RoleEntity, int64, error) {
+	return repository.RoleRepository{}.FindAll(ctx, filters, pageable)
 }
 
 func (RoleBasedAccessControlService) UpdatePermission(ctx context.Context, permissionId uint, permissionInformation dtos.PermissionInformation) error {
-	repository := permissionRepository{}
+	repository := repository.PermissionRepository{}
 	permissionEntity, err := repository.FindById(ctx, permissionId)
 	if err != nil {
 		return err
+	}
+
+	if permissionEntity.Name != permissionInformation.Name {
+		// 변경하려는 이름이 이미 존재하는지 여부 확인
+		exists, err := repository.ExistsByName(ctx, permissionInformation.Name)
+		if err != nil {
+			return err
+		}
+
+		if exists == true {
+			return domain.ErrDuplicated
+		}
 	}
 
 	if err := permissionEntity.Update(ctx, permissionInformation); err != nil {
@@ -54,7 +70,7 @@ func (RoleBasedAccessControlService) DeletePermission(ctx context.Context, permi
 		return err
 	}
 
-	repository := permissionRepository{}
+	repository := repository.PermissionRepository{}
 
 	permissionEntity, err := repository.FindById(ctx, permissionId)
 	if err != nil {
@@ -76,7 +92,7 @@ func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint
 		return err
 	}
 
-	repository := roleRepository{}
+	repository := repository.RoleRepository{}
 
 	roleEntity, err := repository.FindById(ctx, roleId)
 	if err != nil {
@@ -93,15 +109,22 @@ func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint
 }
 
 func (RoleBasedAccessControlService) UpdateRole(ctx context.Context, roleId uint, roleInformation dtos.RoleInformation) error {
-	repository := roleRepository{}
-	roleEntity, err := repository.FindById(ctx, roleId)
+	roleRepository := repository.RoleRepository{}
+	roleEntity, err := roleRepository.FindById(ctx, roleId)
 	if err != nil {
 		return err
 	}
 
-	if err := roleEntity.Update(ctx, roleInformation); err != nil {
+	filters := map[string]interface{}{}
+	filters["permissionIds"] = roleInformation.AllowedPermissionIds
+	allowedPermissionEntities, _, err := repository.PermissionRepository{}.FindAll(ctx, filters, dtos.Pageable{Page: 0})
+	if err != nil {
 		return err
 	}
 
-	return repository.Save(ctx, &roleEntity)
+	if err := roleEntity.Update(ctx, roleInformation, allowedPermissionEntities); err != nil {
+		return err
+	}
+
+	return roleRepository.Save(ctx, &roleEntity)
 }

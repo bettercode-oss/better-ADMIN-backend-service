@@ -1,6 +1,7 @@
-package logging
+package repository
 
 import (
+	"better-admin-backend-service/domain/logging/entity"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
@@ -8,10 +9,10 @@ import (
 	"time"
 )
 
-type memberAccessLogRepository struct {
+type MemberAccessLogRepository struct {
 }
 
-func (memberAccessLogRepository) Create(ctx context.Context, entity MemberAccessLogEntity) error {
+func (MemberAccessLogRepository) Create(ctx context.Context, entity entity.MemberAccessLogEntity) error {
 	db := helpers.ContextHelper().GetDB(ctx)
 	if err := db.Create(&entity).Error; err != nil {
 		return errors.Wrap(err, "db error")
@@ -19,8 +20,8 @@ func (memberAccessLogRepository) Create(ctx context.Context, entity MemberAccess
 	return nil
 }
 
-func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]MemberAccessLogEntity, int64, error) {
-	db := helpers.ContextHelper().GetDB(ctx).Model(&MemberAccessLogEntity{})
+func (MemberAccessLogRepository) FindAll(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.MemberAccessLogEntity, int64, error) {
+	db := helpers.ContextHelper().GetDB(ctx).Model(&entity.MemberAccessLogEntity{})
 
 	if filters != nil {
 		for key, value := range filters {
@@ -30,7 +31,7 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 		}
 	}
 
-	var entities = make([]MemberAccessLogEntity, 0)
+	var entities = make([]entity.MemberAccessLogEntity, 0)
 	var totalCount int64
 
 	if err := db.Count(&totalCount).Scopes(helpers.GormHelper().Pageable(pageable)).Order("id desc").Find(&entities).Error; err != nil {
@@ -40,9 +41,9 @@ func (memberAccessLogRepository) FindAll(ctx context.Context, filters map[string
 	return entities, totalCount, nil
 }
 
-func (memberAccessLogRepository) DeleteBeforeDate(ctx context.Context, date time.Time) error {
+func (MemberAccessLogRepository) DeleteBeforeDate(ctx context.Context, date time.Time) error {
 	db := helpers.ContextHelper().GetDB(ctx)
-	if err := db.Where("created_at < ?", date).Delete(&MemberAccessLogEntity{}).Error; err != nil {
+	if err := db.Where("created_at < ?", date).Delete(&entity.MemberAccessLogEntity{}).Error; err != nil {
 		return errors.Wrap(err, "db error")
 	}
 	return nil

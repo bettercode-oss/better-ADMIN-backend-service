@@ -2,10 +2,9 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/auth"
-	"better-admin-backend-service/domain/member"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/security"
+	memberService "better-admin-backend-service/services"
 	"context"
 	"fmt"
 	"github.com/labstack/echo"
@@ -36,7 +35,7 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	jwtToken, err := auth.AuthService{}.AuthWithSignIdPassword(ctx.Request().Context(), memberSignIn)
+	jwtToken, err := memberService.AuthService{}.AuthWithSignIdPassword(ctx.Request().Context(), memberSignIn)
 	if err != nil {
 		if err == domain.ErrNotFound || err == domain.ErrAuthentication {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -130,7 +129,7 @@ func (AuthController) logMemberAccessAtByToken(ctx context.Context, token string
 		return err
 	}
 
-	err = member.MemberService{}.UpdateMemberLastAccessAt(ctx, userClaim.Id)
+	err = memberService.MemberService{}.UpdateMemberLastAccessAt(ctx, userClaim.Id)
 	if err != nil {
 		return err
 	}
@@ -149,7 +148,7 @@ func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) erro
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	jwtToken, err := auth.AuthService{}.AuthWithDoorayIdAndPassword(ctx.Request().Context(), memberSignIn)
+	jwtToken, err := memberService.AuthService{}.AuthWithDoorayIdAndPassword(ctx.Request().Context(), memberSignIn)
 	if err != nil {
 		if err == domain.ErrAuthentication {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -181,7 +180,7 @@ func (AuthController) AuthWithGoogleWorkspaceAccount(ctx echo.Context) error {
 	code := ctx.QueryParam("code")
 	redirect := ctx.QueryParam("state")
 
-	jwtToken, err := auth.AuthService{}.AuthWithGoogleWorkspaceAccount(ctx.Request().Context(), code)
+	jwtToken, err := memberService.AuthService{}.AuthWithGoogleWorkspaceAccount(ctx.Request().Context(), code)
 	if err != nil {
 		if e, ok := err.(*domain.ErrInvalidGoogleWorkspaceAccount); ok {
 			return ctx.Redirect(http.StatusFound, redirect+fmt.Sprintf("&error=%v 로 끝나는 메일 주소만 사용 가능 합니다.", e.Domain))

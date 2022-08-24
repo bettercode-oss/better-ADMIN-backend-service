@@ -1,7 +1,7 @@
-package member
+package entity
 
 import (
-	"better-admin-backend-service/domain/rbac"
+	"better-admin-backend-service/domain/rbac/entity"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"testing"
@@ -15,12 +15,12 @@ func TestMemberEntity_GetPermissionNames(t *testing.T) {
 		Type:   "site",
 		SignId: "ymyoo",
 		Name:   "유영모",
-		Roles: []rbac.RoleEntity{
+		Roles: []entity.RoleEntity{
 			{
 				Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 				Type:  "user-define",
 				Name:  "테스터",
-				Permissions: []rbac.PermissionEntity{
+				Permissions: []entity.PermissionEntity{
 					{
 						Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 						Type:  "user-define",
@@ -37,7 +37,7 @@ func TestMemberEntity_GetPermissionNames(t *testing.T) {
 				Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 				Type:  "user-define",
 				Name:  "테스터2",
-				Permissions: []rbac.PermissionEntity{
+				Permissions: []entity.PermissionEntity{
 					{
 						Model: gorm.Model{ID: 2, CreatedAt: time.Now(), UpdatedAt: time.Now()},
 						Type:  "user-define",

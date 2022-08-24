@@ -1,12 +1,11 @@
-package auth
+package services
 
 import (
 	"better-admin-backend-service/adapters"
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/member"
-	"better-admin-backend-service/domain/site"
+	"better-admin-backend-service/domain/member/entity"
+	siteEntity "better-admin-backend-service/domain/site/entity"
 	"better-admin-backend-service/dtos"
-	"better-admin-backend-service/factory"
 	"better-admin-backend-service/security"
 	"context"
 	"github.com/mitchellh/mapstructure"
@@ -17,7 +16,7 @@ type AuthService struct {
 }
 
 func (service AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
-	memberEntity, err := member.MemberService{}.GetMemberBySignId(ctx, signIn.Id)
+	memberEntity, err := MemberService{}.GetMemberBySignId(ctx, signIn.Id)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
@@ -35,8 +34,8 @@ func (service AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dt
 	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }
 
-func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Context, memberEntity member.MemberEntity) (token security.JwtToken, err error) {
-	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, memberEntity)
+func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Context, memberEntity entity.MemberEntity) (token security.JwtToken, err error) {
+	memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, memberEntity)
 	if err != nil {
 		return
 	}
@@ -52,7 +51,7 @@ func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Contex
 }
 
 func (service AuthService) logMemberAccessAt(ctx context.Context, memberId uint) error {
-	err := member.MemberService{}.UpdateMemberLastAccessAt(ctx, memberId)
+	err := MemberService{}.UpdateMemberLastAccessAt(ctx, memberId)
 	if err != nil {
 		return err
 	}
@@ -61,7 +60,7 @@ func (service AuthService) logMemberAccessAt(ctx context.Context, memberId uint)
 }
 
 func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
-	doorayLoginSetting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyDoorayLogin)
+	doorayLoginSetting, err := SiteService{}.GetSettingWithKey(ctx, siteEntity.SettingKeyDoorayLogin)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
@@ -81,17 +80,17 @@ func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, sign
 		return security.JwtToken{}, err
 	}
 
-	memberService := member.MemberService{}
+	memberService := MemberService{}
 	memberEntity, err := memberService.GetMemberByDoorayId(ctx, doorayMember.Id)
 	if err != nil {
 		if err == domain.ErrNotFound {
-			newMemberEntity := member.NewMemberEntityFromDoorayMember(doorayMember)
+			newMemberEntity := entity.NewMemberEntityFromDoorayMember(doorayMember)
 
 			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
 				return security.JwtToken{}, err
 			}
 
-			memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, newMemberEntity)
+			memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
 			if err != nil {
 				return security.JwtToken{}, err
 			}
@@ -109,7 +108,7 @@ func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, sign
 }
 
 func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
-	googleWorkspaceLoginSetting, err := site.SiteService{}.GetSettingWithKey(ctx, site.SettingKeyGoogleWorkspaceLogin)
+	googleWorkspaceLoginSetting, err := SiteService{}.GetSettingWithKey(ctx, siteEntity.SettingKeyGoogleWorkspaceLogin)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
@@ -136,17 +135,17 @@ func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, c
 		}
 	}
 
-	memberService := member.MemberService{}
+	memberService := MemberService{}
 	memberEntity, err := memberService.GetMemberByGoogleId(ctx, googleMember.Id)
 	if err != nil {
 		if err == domain.ErrNotFound {
-			newMemberEntity := member.NewMemberEntityFromGoogleMember(googleMember)
+			newMemberEntity := entity.NewMemberEntityFromGoogleMember(googleMember)
 
 			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
 				return security.JwtToken{}, err
 			}
 
-			memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx, newMemberEntity)
+			memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
 			if err != nil {
 				return security.JwtToken{}, err
 			}

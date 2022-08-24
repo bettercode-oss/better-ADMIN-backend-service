@@ -2,13 +2,11 @@ package controllers
 
 import (
 	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/member"
-	organiztion "better-admin-backend-service/domain/organization"
-	"better-admin-backend-service/domain/rbac"
+	"better-admin-backend-service/domain/member/entity"
 	"better-admin-backend-service/dtos"
-	"better-admin-backend-service/factory"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
+	rbacService "better-admin-backend-service/services"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
@@ -35,8 +33,8 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	memberEntity, err := member.MemberService{}.GetMemberById(ctx.Request().Context(), userClaim.Id)
-	memberAssignedAllRoleAndPermission, err := factory.MemberAssignedAllRoleAndPermissionFactory{}.Create(ctx.Request().Context(), memberEntity)
+	memberEntity, err := rbacService.MemberService{}.GetMemberById(ctx.Request().Context(), userClaim.Id)
+	memberAssignedAllRoleAndPermission, err := rbacService.OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx.Request().Context(), memberEntity)
 	if err != nil {
 		return err
 	}
@@ -74,7 +72,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		filters["roleIds"] = strings.Split(ctx.QueryParam("roleIds"), ",")
 	}
 
-	memberEntities, totalCount, err := member.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
+	memberEntities, totalCount, err := rbacService.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
 	if err != nil {
 		return err
 	}
@@ -86,7 +84,7 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 
 	filters = map[string]interface{}{}
 	filters["memberIds"] = memberIds
-	organizationsOfMembers, err := organiztion.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
+	organizationsOfMembers, err := rbacService.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
 	if err != nil {
 		return err
 	}
@@ -159,7 +157,7 @@ func (MemberController) AssignRole(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = member.MemberService{}.AssignRole(ctx.Request().Context(), uint(memberId), assignRole)
+	err = rbacService.MemberService{}.AssignRole(ctx.Request().Context(), uint(memberId), assignRole)
 	if err != nil {
 		return err
 	}
@@ -173,7 +171,7 @@ func (MemberController) GetMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	memberEntity, err := member.MemberService{}.GetMember(ctx.Request().Context(), uint(memberId))
+	memberEntity, err := rbacService.MemberService{}.GetMember(ctx.Request().Context(), uint(memberId))
 	if err != nil {
 		return err
 	}
@@ -206,7 +204,7 @@ func (MemberController) SignUpMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err := member.MemberService{}.SignUpMember(ctx.Request().Context(), memberSignUp)
+	err := rbacService.MemberService{}.SignUpMember(ctx.Request().Context(), memberSignUp)
 	if err != nil {
 		if err == domain.ErrDuplicated {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -223,7 +221,7 @@ func (MemberController) ApproveMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = member.MemberService{}.ApproveMember(ctx.Request().Context(), uint(memberId))
+	err = rbacService.MemberService{}.ApproveMember(ctx.Request().Context(), uint(memberId))
 	if err != nil {
 		if err == domain.ErrAlreadyApproved {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -241,22 +239,22 @@ func (MemberController) GetSearchFilters(ctx echo.Context) error {
 		Name: "type",
 		Filters: []dtos.Filter{
 			{
-				Text:  member.TypeMemberSiteName,
-				Value: member.TypeMemberSite,
+				Text:  entity.TypeMemberSiteName,
+				Value: entity.TypeMemberSite,
 			},
 			{
-				Text:  member.TypeMemberDoorayName,
-				Value: member.TypeMemberDooray,
+				Text:  entity.TypeMemberDoorayName,
+				Value: entity.TypeMemberDooray,
 			},
 			{
-				Text:  member.TypeMemberGoogleName,
-				Value: member.TypeMemberGoogle,
+				Text:  entity.TypeMemberGoogleName,
+				Value: entity.TypeMemberGoogle,
 			},
 		},
 	}
 	filters = append(filters, memberTypeSearchFilter)
 
-	allRoles, _, err := rbac.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, dtos.Pageable{Page: 0})
+	allRoles, _, err := rbacService.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, dtos.Pageable{Page: 0})
 	if err != nil {
 		return err
 	}
@@ -283,7 +281,7 @@ func (MemberController) RejectMember(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	err = member.MemberService{}.RejectMember(ctx.Request().Context(), uint(memberId))
+	err = rbacService.MemberService{}.RejectMember(ctx.Request().Context(), uint(memberId))
 	if err != nil {
 		if err == domain.ErrNotFound {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
