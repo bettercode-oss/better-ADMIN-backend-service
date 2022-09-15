@@ -198,3 +198,43 @@ func TestSiteController_GetMemberAccessLogSetting(t *testing.T) {
 
 	assert.Equal(t, expected, actual)
 }
+
+func TestSiteController_GetAppVersion(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/app-version", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(SiteController{}.GetAppVersion, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"version": float64(2),
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestSiteController_IncreaseAppVersion(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/app-version", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(SiteController{}.IncreaseAppVersion, ctx)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}

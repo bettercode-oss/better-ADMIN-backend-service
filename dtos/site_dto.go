@@ -67,3 +67,17 @@ type MemberAccessLogSetting struct {
 func (m MemberAccessLogSetting) Validate(ctx echo.Context) error {
 	return ctx.Validate(m)
 }
+
+type AppVersionSetting struct {
+	Version uint `json:"version"`
+}
+
+func (avs *AppVersionSetting) Increase() {
+	avs.Version = avs.Version + 1
+}
+
+func NewAppVersionSetting() AppVersionSetting {
+	return AppVersionSetting{
+		Version: 1,
+	}
+}

@@ -9,6 +9,7 @@ const (
 	SettingKeyDoorayLogin          = "dooray-login"
 	SettingKeyGoogleWorkspaceLogin = "google-workspace-login"
 	SettingKeyMemberAccessLog      = "member-access-log"
+	SettingKeyAppVersion           = "app-version"
 )
 
 type SettingEntity struct {
