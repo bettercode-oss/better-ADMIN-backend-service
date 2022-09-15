@@ -29,6 +29,8 @@ func (controller SiteController) Init(g *echo.Group) {
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
 	g.GET("/settings/member-access-logs", controller.GetMemberAccessLogSetting,
 		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
+	g.GET("/settings/app-version", controller.GetAppVersion)
+	g.PUT("/settings/app-version", controller.IncreaseAppVersion)
 }
 
 func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {
@@ -163,4 +165,22 @@ func (SiteController) GetMemberAccessLogSetting(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, setting)
+}
+
+func (SiteController) GetAppVersion(ctx echo.Context) error {
+	appVersion, err := services.SiteService{}.GetAppVersion(ctx.Request().Context())
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, appVersion)
+}
+
+func (SiteController) IncreaseAppVersion(ctx echo.Context) error {
+	err := services.SiteService{}.IncreaseAppVersion(ctx.Request().Context())
+	if err != nil {
+		return err
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }
