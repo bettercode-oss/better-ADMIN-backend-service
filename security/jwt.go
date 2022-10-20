@@ -40,7 +40,8 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 		refreshTokenClaims[key] = value
 	}
 	// TODO config 로 빼자.
-	refreshTokenClaims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
+	refreshTokenExpires := time.Now().Add(time.Hour * 24 * 7)
+	refreshTokenClaims["exp"] = refreshTokenExpires.Unix()
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
 	if err != nil {
@@ -48,8 +49,9 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	}
 
 	return JwtToken{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		AccessToken:         accessToken,
+		RefreshToken:        refreshToken,
+		RefreshTokenExpires: refreshTokenExpires,
 	}, nil
 }
 
@@ -130,8 +132,9 @@ func (jwtAuthentication JwtAuthentication) ValidateToken(token string) error {
 }
 
 type JwtToken struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken         string
+	RefreshToken        string
+	RefreshTokenExpires time.Time
 }
 
 type UserClaim struct {

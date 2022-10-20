@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/config"
+	"better-admin-backend-service/security"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -11,6 +12,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
@@ -36,6 +38,21 @@ func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
 	var resp interface{}
 	json.Unmarshal(rec.Body.Bytes(), &resp)
 	assert.NotEmpty(t, resp.(map[string]interface{})["accessToken"])
+
+	// assert Cookie value
+	headerSetCookie := rec.Header().Get("Set-Cookie")
+	fmt.Println("Set-Cookie in headers", headerSetCookie)
+
+	assert.NotEmpty(t, headerSetCookie)
+	assert.True(t, strings.HasPrefix(headerSetCookie, "refreshToken="))
+	expires := "Expires=" + time.Now().Add(time.Hour*24*7).Format("Mon, 02 Jan 2006")
+	assert.True(t, strings.Contains(headerSetCookie, expires))
+	assert.True(t, strings.Contains(headerSetCookie, "HttpOnly"))
+
+	refreshToken := headerSetCookie[strings.Index(headerSetCookie, "refreshToken=")+len("refreshToken=") : strings.Index(headerSetCookie, ";")]
+	tokenUserClaim, _ := security.JwtAuthentication{}.ConvertTokenUserClaim(refreshToken)
+	assert.Equal(t, uint(1), tokenUserClaim.Id)
+
 }
 
 func TestAuthController_AuthWithSignIdPassword_미_승인_사용자(t *testing.T) {
@@ -116,7 +133,20 @@ func TestAuthController_AuthWithGoogleWorkspaceAccount(t *testing.T) {
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.True(t, strings.Contains(rec.Header().Get("Location"), "accessToken="))
-	assert.True(t, strings.Contains(rec.Header().Get("Set-Cookie"), "refreshToken="))
+
+	// assert Cookie value
+	headerSetCookie := rec.Header().Get("Set-Cookie")
+	fmt.Println("Set-Cookie in headers", headerSetCookie)
+
+	assert.NotEmpty(t, headerSetCookie)
+	assert.True(t, strings.HasPrefix(headerSetCookie, "refreshToken="))
+	expires := "Expires=" + time.Now().Add(time.Hour*24*7).Format("Mon, 02 Jan 2006")
+	assert.True(t, strings.Contains(headerSetCookie, expires))
+	assert.True(t, strings.Contains(headerSetCookie, "HttpOnly"))
+
+	refreshToken := headerSetCookie[strings.Index(headerSetCookie, "refreshToken=")+len("refreshToken=") : strings.Index(headerSetCookie, ";")]
+	tokenUserClaim, _ := security.JwtAuthentication{}.ConvertTokenUserClaim(refreshToken)
+	assert.Equal(t, uint(5), tokenUserClaim.Id)
 }
 
 func TestAuthController_AuthWithGoogleWorkspaceAccount_구글_워크스페이스_멤버가_아닌_경우(t *testing.T) {

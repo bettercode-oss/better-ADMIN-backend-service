@@ -55,11 +55,13 @@ func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
 		cookie.Value = jwtToken.RefreshToken
 		cookie.HttpOnly = true
 		cookie.Path = "/"
+		cookie.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(cookie)
 	} else {
 		refreshToken.Value = jwtToken.RefreshToken
 		refreshToken.HttpOnly = true
 		refreshToken.Path = "/"
+		refreshToken.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(refreshToken)
 	}
 
@@ -163,11 +165,13 @@ func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) erro
 		cookie.Value = jwtToken.RefreshToken
 		cookie.HttpOnly = true
 		cookie.Path = "/"
+		cookie.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(cookie)
 	} else {
 		refreshToken.Value = jwtToken.RefreshToken
 		refreshToken.HttpOnly = true
 		refreshToken.Path = "/"
+		refreshToken.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(refreshToken)
 	}
 
@@ -196,11 +200,13 @@ func (AuthController) AuthWithGoogleWorkspaceAccount(ctx echo.Context) error {
 		cookie.Value = jwtToken.RefreshToken
 		cookie.HttpOnly = true
 		cookie.Path = "/"
+		cookie.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(cookie)
 	} else {
 		refreshToken.Value = jwtToken.RefreshToken
 		refreshToken.HttpOnly = true
 		refreshToken.Path = "/"
+		refreshToken.Expires = jwtToken.RefreshTokenExpires
 		ctx.SetCookie(refreshToken)
 	}
 
