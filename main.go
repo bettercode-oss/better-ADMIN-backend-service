@@ -20,6 +20,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
@@ -196,7 +197,8 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 	}
 
 	if code == http.StatusInternalServerError {
-		log.Errorf("%+v", err)
+		log.Errorf("%+v \ndebug stack %v", err, string(debug.Stack()))
+
 		c.String(code, "Internal Server Error")
 	} else {
 		c.JSON(code, msg)
