@@ -6,6 +6,7 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -39,6 +40,10 @@ func (PermissionRepository) FindAll(ctx context.Context, filters map[string]inte
 		for key, value := range filters {
 			if key == "permissionIds" {
 				db.Where("id IN ?", value)
+			}
+
+			if key == "name" {
+				db.Where("name LIKE ?", fmt.Sprintf("%%%v%%", value))
 			}
 		}
 	}

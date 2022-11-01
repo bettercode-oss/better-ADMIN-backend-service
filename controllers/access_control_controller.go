@@ -60,7 +60,12 @@ func (AccessControlController) CreatePermission(ctx echo.Context) error {
 func (AccessControlController) GetPermissions(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
 
-	permissionEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), nil, pageable)
+	filters := map[string]interface{}{}
+	if len(ctx.QueryParam("name")) > 0 {
+		filters["name"] = ctx.QueryParam("name")
+	}
+
+	permissionEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), filters, pageable)
 	if err != nil {
 		return err
 	}
