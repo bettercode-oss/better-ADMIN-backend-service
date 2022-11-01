@@ -432,6 +432,47 @@ func TestAccessControlController_GetRoles(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestAccessControlController_GetRoles_이름으로_검색(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles?name=테스", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(AccessControlController{}.GetRoles, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(3),
+				"type":        "user-define",
+				"typeName":    "사용자정의",
+				"name":        "테스트 관리자",
+				"description": "",
+				"permissions": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "MANAGE_SYSTEM_SETTINGS",
+					},
+				},
+			},
+		},
+		"totalCount": float64(1),
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
 func TestAccessControlController_GetRole(t *testing.T) {
 	DatabaseFixture{}.setUpDefault()
 
