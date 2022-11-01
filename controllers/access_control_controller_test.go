@@ -83,18 +83,58 @@ func TestAccessControlController_GetPermissions(t *testing.T) {
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
-
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.Equal(t, float64(3), resp.(map[string]interface{})["totalCount"])
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	permissions := resp.(map[string]interface{})["result"].([]interface{})
-	index := 0
-	assert.Equal(t, float64(3), permissions[index].(map[string]interface{})["id"])
-	assert.Equal(t, "user-define", permissions[index].(map[string]interface{})["type"])
-	assert.Equal(t, "ACCESS_STOCK", permissions[index].(map[string]interface{})["name"])
-	assert.Equal(t, "재고 접근 권한", permissions[index].(map[string]interface{})["description"])
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(3),
+				"type":        "user-define",
+				"typeName":    "사용자정의",
+				"name":        "ACCESS_STOCK",
+				"description": "재고 접근 권한",
+			},
+		},
+		"totalCount": float64(3),
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestAccessControlController_GetPermissions_이름으로_검색(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=1&pageSize=10&name=ACCESS", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+
+	// when
+	handleWithFilter(AccessControlController{}.GetPermissions, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(3),
+				"type":        "user-define",
+				"typeName":    "사용자정의",
+				"name":        "ACCESS_STOCK",
+				"description": "재고 접근 권한",
+			},
+		},
+		"totalCount": float64(1),
+	}
+
+	assert.Equal(t, expected, actual)
 }
 
 func TestAccessControlController_GetPermission(t *testing.T) {
