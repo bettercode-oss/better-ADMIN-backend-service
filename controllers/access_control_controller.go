@@ -28,6 +28,8 @@ func (controller AccessControlController) Init(g *echo.Group) {
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.GET("/roles", controller.GetRoles,
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.GET("/roles/:roleId", controller.GetRole,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.PUT("/roles/:roleId", controller.UpdateRole,
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.DELETE("/roles/:roleId", controller.DeleteRole,
@@ -256,4 +258,39 @@ func (AccessControlController) UpdateRole(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, nil)
 
+}
+
+func (AccessControlController) GetRole(ctx echo.Context) error {
+	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	roleEntity, err := services.RoleBasedAccessControlService{}.GetRole(ctx.Request().Context(), uint(roleId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusNotFound, nil)
+		}
+		return err
+	}
+
+	var allowedPermissions = make([]dtos.AllowedPermission, 0)
+	for _, permission := range roleEntity.Permissions {
+		allowedPermissions = append(allowedPermissions, dtos.AllowedPermission{
+			Id:   permission.ID,
+			Name: permission.Name,
+		})
+	}
+
+	roleDetails := dtos.RoleDetails{
+		Id:                 roleEntity.ID,
+		Type:               roleEntity.Type,
+		TypeName:           roleEntity.GetTypeName(),
+		Name:               roleEntity.Name,
+		Description:        roleEntity.Description,
+		CreatedAt:          roleEntity.CreatedAt,
+		AllowedPermissions: allowedPermissions,
+	}
+
+	return ctx.JSON(http.StatusOK, roleDetails)
 }
