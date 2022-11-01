@@ -49,3 +49,13 @@ type AllowedPermission struct {
 	Id   uint   `json:"id"`
 	Name string `json:"name"`
 }
+
+type RoleDetails struct {
+	Id                 uint                `json:"id"`
+	Type               string              `json:"type"`
+	TypeName           string              `json:"typeName"`
+	Name               string              `json:"name"`
+	Description        string              `json:"description"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	AllowedPermissions []AllowedPermission `json:"permissions"`
+}

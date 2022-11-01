@@ -375,54 +375,119 @@ func TestAccessControlController_GetRoles(t *testing.T) {
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
-
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.Equal(t, float64(3), resp.(map[string]interface{})["totalCount"])
 
-	roles := resp.(map[string]interface{})["result"].([]interface{})
-	index := 0
-	assert.Equal(t, float64(1), roles[index].(map[string]interface{})["id"])
-	assert.Equal(t, "pre-define", roles[index].(map[string]interface{})["type"])
-	assert.Equal(t, "사전정의", roles[index].(map[string]interface{})["typeName"])
-	assert.Equal(t, "SYSTEM MANAGER", roles[index].(map[string]interface{})["name"])
-	assert.Equal(t, "시스템 관리자", roles[index].(map[string]interface{})["description"])
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	permissions := roles[index].(map[string]interface{})["permissions"].([]interface{})
-	assert.Equal(t, 2, len(permissions))
-	permissionIndex := 0
-	assert.Equal(t, float64(1), permissions[permissionIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "MANAGE_SYSTEM_SETTINGS", permissions[permissionIndex].(map[string]interface{})["name"])
-	permissionIndex++
-	assert.Equal(t, float64(2), permissions[permissionIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "MANAGE_MEMBERS", permissions[permissionIndex].(map[string]interface{})["name"])
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":          float64(1),
+				"type":        "pre-define",
+				"typeName":    "사전정의",
+				"name":        "SYSTEM MANAGER",
+				"description": "시스템 관리자",
+				"permissions": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "MANAGE_SYSTEM_SETTINGS",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MANAGE_MEMBERS",
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(2),
+				"type":        "pre-define",
+				"typeName":    "사전정의",
+				"name":        "MEMBER MANAGER",
+				"description": "멤버 관리자",
+				"permissions": []interface{}{
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MANAGE_MEMBERS",
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":          float64(3),
+				"type":        "user-define",
+				"typeName":    "사용자정의",
+				"name":        "테스트 관리자",
+				"description": "",
+				"permissions": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "MANAGE_SYSTEM_SETTINGS",
+					},
+				},
+			},
+		},
+		"totalCount": float64(3),
+	}
 
-	index++
-	assert.Equal(t, float64(2), roles[index].(map[string]interface{})["id"])
-	assert.Equal(t, "pre-define", roles[index].(map[string]interface{})["type"])
-	assert.Equal(t, "사전정의", roles[index].(map[string]interface{})["typeName"])
-	assert.Equal(t, "MEMBER MANAGER", roles[index].(map[string]interface{})["name"])
-	assert.Equal(t, "멤버 관리자", roles[index].(map[string]interface{})["description"])
+	assert.Equal(t, expected, actual)
+}
 
-	permissions = roles[index].(map[string]interface{})["permissions"].([]interface{})
-	assert.Equal(t, 1, len(permissions))
-	permissionIndex = 0
-	assert.Equal(t, float64(2), permissions[permissionIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "MANAGE_MEMBERS", permissions[permissionIndex].(map[string]interface{})["name"])
+func TestAccessControlController_GetRole(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
 
-	index++
-	assert.Equal(t, float64(3), roles[index].(map[string]interface{})["id"])
-	assert.Equal(t, "user-define", roles[index].(map[string]interface{})["type"])
-	assert.Equal(t, "사용자정의", roles[index].(map[string]interface{})["typeName"])
-	assert.Equal(t, "테스트 관리자", roles[index].(map[string]interface{})["name"])
-	assert.Equal(t, "", roles[index].(map[string]interface{})["description"])
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/:roleId", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("roleId")
+	ctx.SetParamValues("3")
 
-	permissions = roles[index].(map[string]interface{})["permissions"].([]interface{})
-	assert.Equal(t, 1, len(permissions))
-	permissionIndex = 0
-	assert.Equal(t, float64(1), permissions[permissionIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "MANAGE_SYSTEM_SETTINGS", permissions[permissionIndex].(map[string]interface{})["name"])
+	// when
+	handleWithFilter(AccessControlController{}.GetRole, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"id":          float64(3),
+		"type":        "user-define",
+		"typeName":    "사용자정의",
+		"name":        "테스트 관리자",
+		"description": "",
+		"createdAt":   "1982-01-04T00:00:00Z",
+		"permissions": []interface{}{
+			map[string]interface{}{
+				"id":   float64(1),
+				"name": "MANAGE_SYSTEM_SETTINGS",
+			},
+		},
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestAccessControlController_GetRole_ID가_없는_경우(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/:roleId", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("roleId")
+	ctx.SetParamValues("11")
+
+	// when
+	handleWithFilter(AccessControlController{}.GetRole, ctx)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	fmt.Println(rec.Body.String())
 }
 
 func TestAccessControlController_DeleteRole(t *testing.T) {

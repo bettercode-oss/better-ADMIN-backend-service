@@ -132,3 +132,7 @@ func (RoleBasedAccessControlService) UpdateRole(ctx context.Context, roleId uint
 
 	return roleRepository.Save(ctx, &roleEntity)
 }
+
+func (RoleBasedAccessControlService) GetRole(ctx context.Context, roleId uint) (entity.RoleEntity, error) {
+	return repository.RoleRepository{}.FindById(ctx, roleId)
+}
