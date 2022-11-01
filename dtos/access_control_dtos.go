@@ -1,6 +1,9 @@
 package dtos
 
-import "github.com/labstack/echo"
+import (
+	"github.com/labstack/echo"
+	"time"
+)
 
 type PermissionInformation struct {
 	Id          uint   `json:"id"`
@@ -12,6 +15,15 @@ type PermissionInformation struct {
 
 func (p PermissionInformation) Validate(ctx echo.Context) error {
 	return ctx.Validate(p)
+}
+
+type PermissionDetails struct {
+	Id          uint      `json:"id"`
+	Type        string    `json:"type"`
+	TypeName    string    `json:"typeName"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type RoleInformation struct {

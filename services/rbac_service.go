@@ -25,6 +25,10 @@ func (RoleBasedAccessControlService) GetPermissions(ctx context.Context, filters
 	return repository.PermissionRepository{}.FindAll(ctx, filters, pageable)
 }
 
+func (RoleBasedAccessControlService) GetPermission(ctx context.Context, permissionId uint) (entity.PermissionEntity, error) {
+	return repository.PermissionRepository{}.FindById(ctx, permissionId)
+}
+
 func (RoleBasedAccessControlService) CreateRole(ctx context.Context, roleInformation dtos.RoleInformation) error {
 	roleEntity, err := factory.NewRoleEntity(ctx, roleInformation)
 	if err != nil {

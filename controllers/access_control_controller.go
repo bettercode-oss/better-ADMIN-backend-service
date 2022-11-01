@@ -82,6 +82,32 @@ func (AccessControlController) GetPermissions(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, pageResult)
 }
 
+func (AccessControlController) GetPermission(ctx echo.Context) error {
+	permissionId, err := strconv.ParseInt(ctx.Param("permissionId"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	permissionEntity, err := services.RoleBasedAccessControlService{}.GetPermission(ctx.Request().Context(), uint(permissionId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusNotFound, nil)
+		}
+		return err
+	}
+
+	permissionDetails := dtos.PermissionDetails{
+		Id:          permissionEntity.ID,
+		Type:        permissionEntity.Type,
+		TypeName:    permissionEntity.GetTypeName(),
+		Name:        permissionEntity.Name,
+		Description: permissionEntity.Description,
+		CreatedAt:   permissionEntity.CreatedAt,
+	}
+
+	return ctx.JSON(http.StatusOK, permissionDetails)
+}
+
 func (AccessControlController) UpdatePermission(ctx echo.Context) error {
 	permissionId, err := strconv.ParseInt(ctx.Param("permissionId"), 10, 64)
 	if err != nil {
