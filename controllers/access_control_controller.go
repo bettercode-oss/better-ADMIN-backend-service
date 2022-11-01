@@ -182,7 +182,12 @@ func (AccessControlController) CreateRole(ctx echo.Context) error {
 func (AccessControlController) GetRoles(ctx echo.Context) error {
 	pageable := dtos.GetPageableFromRequest(ctx)
 
-	roleEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, pageable)
+	filters := map[string]interface{}{}
+	if len(ctx.QueryParam("name")) > 0 {
+		filters["name"] = ctx.QueryParam("name")
+	}
+
+	roleEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), filters, pageable)
 	if err != nil {
 		return err
 	}

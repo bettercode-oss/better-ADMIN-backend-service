@@ -125,6 +125,10 @@ func (RoleRepository) FindAll(ctx context.Context, filters map[string]interface{
 			if key == "roleIds" {
 				db.Where("id IN ?", value)
 			}
+
+			if key == "name" {
+				db.Where("name LIKE ?", fmt.Sprintf("%%%v%%", value))
+			}
 		}
 	}
 
