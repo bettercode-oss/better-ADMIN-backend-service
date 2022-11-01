@@ -18,6 +18,8 @@ func (controller AccessControlController) Init(g *echo.Group) {
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.GET("/permissions", controller.GetPermissions,
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+	g.GET("/permissions/:permissionId", controller.GetPermission,
+		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.PUT("/permissions/:permissionId", controller.UpdatePermission,
 		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
 	g.DELETE("/permissions/:permissionId", controller.DeletePermission,
