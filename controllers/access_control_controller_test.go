@@ -97,6 +97,58 @@ func TestAccessControlController_GetPermissions(t *testing.T) {
 	assert.Equal(t, "재고 접근 권한", permissions[index].(map[string]interface{})["description"])
 }
 
+func TestAccessControlController_GetPermission(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permission/:permissionId", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("permissionId")
+	ctx.SetParamValues("3")
+
+	// when
+	handleWithFilter(AccessControlController{}.GetPermission, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"id":          float64(3),
+		"type":        "user-define",
+		"typeName":    "사용자정의",
+		"name":        "ACCESS_STOCK",
+		"description": "재고 접근 권한",
+		"createdAt":   "1982-01-04T00:00:00Z",
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestAccessControlController_GetPermission_ID에_해당하는_권한이_없는_경우(t *testing.T) {
+	DatabaseFixture{}.setUpDefault()
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permission/:permissionId", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("permissionId")
+	ctx.SetParamValues("100")
+
+	// when
+	handleWithFilter(AccessControlController{}.GetPermission, ctx)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	fmt.Println(rec.Body.String())
+}
+
 func TestAccessControlController_UpdatePermission(t *testing.T) {
 	DatabaseFixture{}.setUpDefault()
 
