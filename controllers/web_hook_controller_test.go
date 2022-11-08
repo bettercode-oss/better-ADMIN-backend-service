@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestWebHookController_CreateWebHook(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -41,7 +42,7 @@ func TestWebHookController_CreateWebHook(t *testing.T) {
 }
 
 func TestWebHookController_GetWebHooks(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks?page=1&pageSize=2", nil)
@@ -78,7 +79,7 @@ func TestWebHookController_GetWebHooks(t *testing.T) {
 }
 
 func TestWebHookController_DeleteWebHook(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	webHookId := "3"
@@ -101,7 +102,7 @@ func TestWebHookController_DeleteWebHook(t *testing.T) {
 }
 
 func TestWebHookController_GetWebHook(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	webHookId := "3"
@@ -137,7 +138,7 @@ func TestWebHookController_GetWebHook(t *testing.T) {
 }
 
 func TestWebHookController_UpdateWebHook(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	webHookId := "3"
@@ -167,7 +168,7 @@ func TestWebHookController_UpdateWebHook(t *testing.T) {
 }
 
 func TestWebHookController_NoteMessage(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	webHookId := "3"

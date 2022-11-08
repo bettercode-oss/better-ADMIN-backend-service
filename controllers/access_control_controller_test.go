@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestAccessControlController_CreatePermission(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -40,7 +41,7 @@ func TestAccessControlController_CreatePermission(t *testing.T) {
 }
 
 func TestAccessControlController_CreatePermission_권한명이_이미_있는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -70,7 +71,7 @@ func TestAccessControlController_CreatePermission_권한명이_이미_있는_경
 }
 
 func TestAccessControlController_GetPermissions(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=2&pageSize=2", nil)
@@ -104,7 +105,7 @@ func TestAccessControlController_GetPermissions(t *testing.T) {
 }
 
 func TestAccessControlController_GetPermissions_이름으로_검색(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=1&pageSize=10&name=ACCESS", nil)
@@ -138,7 +139,7 @@ func TestAccessControlController_GetPermissions_이름으로_검색(t *testing.T
 }
 
 func TestAccessControlController_GetPermission(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permission/:permissionId", nil)
@@ -171,7 +172,7 @@ func TestAccessControlController_GetPermission(t *testing.T) {
 }
 
 func TestAccessControlController_GetPermission_ID에_해당하는_권한이_없는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permission/:permissionId", nil)
@@ -190,7 +191,7 @@ func TestAccessControlController_GetPermission_ID에_해당하는_권한이_없�
 }
 
 func TestAccessControlController_UpdatePermission(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	permissionId := "3"
@@ -219,7 +220,7 @@ func TestAccessControlController_UpdatePermission(t *testing.T) {
 }
 
 func TestAccessControlController_UpdatePermission_사전_정의_유형(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	permissionId := "2"
@@ -252,7 +253,7 @@ func TestAccessControlController_UpdatePermission_사전_정의_유형(t *testin
 }
 
 func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	permissionId := "3"
@@ -285,7 +286,7 @@ func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_
 }
 
 func TestAccessControlController_DeletePermission(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	permissionId := "3"
@@ -308,7 +309,7 @@ func TestAccessControlController_DeletePermission(t *testing.T) {
 }
 
 func TestAccessControlController_DeletePermission_사전_정의_유형(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	permissionId := "2"
@@ -335,7 +336,7 @@ func TestAccessControlController_DeletePermission_사전_정의_유형(t *testin
 }
 
 func TestAccessControlController_CreateRole(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -362,7 +363,7 @@ func TestAccessControlController_CreateRole(t *testing.T) {
 }
 
 func TestAccessControlController_GetRoles(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles", nil)
@@ -433,7 +434,7 @@ func TestAccessControlController_GetRoles(t *testing.T) {
 }
 
 func TestAccessControlController_GetRoles_이름으로_검색(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles?name=테스", nil)
@@ -474,7 +475,7 @@ func TestAccessControlController_GetRoles_이름으로_검색(t *testing.T) {
 }
 
 func TestAccessControlController_GetRole(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/:roleId", nil)
@@ -513,7 +514,7 @@ func TestAccessControlController_GetRole(t *testing.T) {
 }
 
 func TestAccessControlController_GetRole_ID가_없는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/:roleId", nil)
@@ -532,7 +533,7 @@ func TestAccessControlController_GetRole_ID가_없는_경우(t *testing.T) {
 }
 
 func TestAccessControlController_DeleteRole(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	roleId := "3"
@@ -555,7 +556,7 @@ func TestAccessControlController_DeleteRole(t *testing.T) {
 }
 
 func TestAccessControlController_DeleteRole_사전정의_유형(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	roleId := "2"
@@ -583,7 +584,7 @@ func TestAccessControlController_DeleteRole_사전정의_유형(t *testing.T) {
 }
 
 func TestAccessControlController_UpdateRole(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	roleId := "3"
@@ -613,7 +614,7 @@ func TestAccessControlController_UpdateRole(t *testing.T) {
 }
 
 func TestAccessControlController_UpdateRole_사전정의_유형(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	roleId := "2"

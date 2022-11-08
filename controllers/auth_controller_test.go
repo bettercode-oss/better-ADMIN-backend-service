@@ -3,6 +3,7 @@ package controllers
 import (
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -56,7 +57,7 @@ func TestAuthController_AuthWithSignIdPassword(t *testing.T) {
 }
 
 func TestAuthController_AuthWithSignIdPassword_미_승인_사용자(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -78,7 +79,7 @@ func TestAuthController_AuthWithSignIdPassword_미_승인_사용자(t *testing.T
 }
 
 func TestAuthController_AuthWithGoogleWorkspaceAccount(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +151,7 @@ func TestAuthController_AuthWithGoogleWorkspaceAccount(t *testing.T) {
 }
 
 func TestAuthController_AuthWithGoogleWorkspaceAccount_구글_워크스페이스_멤버가_아닌_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// setUp WebServer Fixture
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

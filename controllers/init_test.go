@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"better-admin-backend-service/config"
 	"better-admin-backend-service/middlewares"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo"
 	_ "github.com/mattn/go-sqlite3"
+	"net/http"
+
 	//"gopkg.in/testfixtures.v2"
 
 	"gorm.io/driver/sqlite"
@@ -39,19 +42,14 @@ func setUpDatabase() *gorm.DB {
 func setUpEcho(gormDB *gorm.DB) {
 	fmt.Println("Set up echo")
 	echoApp = echo.New()
-	echoApp.Validator = &CustomValidator{validator: validator.New()}
-
+	echoApp.Validator = &config.CustomValidator{Validator: validator.New()}
 	db := middlewares.GORMDb(gormDB)
-
 	handleWithFilter = func(handlerFunc echo.HandlerFunc, c echo.Context) error {
-		return db(handlerFunc)(c)
+		err := db(handlerFunc)(c)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("%+v", err))
+			c.String(http.StatusInternalServerError, "Internal Server Error")
+		}
+		return err
 	}
-}
-
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
 }

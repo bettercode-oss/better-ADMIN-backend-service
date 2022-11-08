@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=2&status=approved", nil)
@@ -109,7 +110,7 @@ func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
 }
 
 func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=applied", nil)
@@ -148,7 +149,7 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 }
 
 func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&name=유", nil)
@@ -234,7 +235,7 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 }
 
 func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&types=dooray,site", nil)
@@ -352,7 +353,7 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 }
 
 func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
@@ -447,7 +448,7 @@ func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
 }
 
 func TestMemberController_AssignRoles(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -474,7 +475,7 @@ func TestMemberController_AssignRoles(t *testing.T) {
 }
 
 func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -501,7 +502,7 @@ func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
 }
 
 func TestMemberController_GetMember(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/:id", nil)
@@ -533,7 +534,7 @@ func TestMemberController_GetMember(t *testing.T) {
 }
 
 func TestMemberController_SignUpMember(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -556,7 +557,7 @@ func TestMemberController_SignUpMember(t *testing.T) {
 }
 
 func TestMemberController_SignUpMember_아이디_중복(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -579,7 +580,7 @@ func TestMemberController_SignUpMember_아이디_중복(t *testing.T) {
 }
 
 func TestMemberController_ApproveMember(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/approved", nil)
@@ -603,7 +604,7 @@ func TestMemberController_ApproveMember(t *testing.T) {
 }
 
 func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/approved", nil)
@@ -627,7 +628,7 @@ func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
 }
 
 func TestMemberController_GetSearchFilters(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/search-filters", nil)
@@ -685,7 +686,7 @@ func TestMemberController_GetSearchFilters(t *testing.T) {
 }
 
 func TestMemberController_RejectMember(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/rejected", nil)
