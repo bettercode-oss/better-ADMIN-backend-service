@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestOrganizationController_CreateOrganization_최상위_조직으로_추가(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -39,7 +40,7 @@ func TestOrganizationController_CreateOrganization_최상위_조직으로_추가
 }
 
 func TestOrganizationController_CreateOrganization_상위조직이_있는_경우(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -65,7 +66,7 @@ func TestOrganizationController_CreateOrganization_상위조직이_있는_경우
 }
 
 func TestOrganizationController_GetOrganizations(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations", nil)
@@ -144,7 +145,7 @@ func TestOrganizationController_GetOrganizations(t *testing.T) {
 }
 
 func TestOrganizationController_ChangePosition_하위로_변경(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "2"
@@ -172,7 +173,7 @@ func TestOrganizationController_ChangePosition_하위로_변경(t *testing.T) {
 }
 
 func TestOrganizationController_ChangePosition_최상위로_변경(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "2"
@@ -198,7 +199,7 @@ func TestOrganizationController_ChangePosition_최상위로_변경(t *testing.T)
 }
 
 func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "4"
@@ -222,7 +223,7 @@ func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
 }
 
 func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "1"
@@ -246,7 +247,7 @@ func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
 }
 
 func TestOrganizationController_AssignRoles(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "1"
@@ -269,7 +270,7 @@ func TestOrganizationController_AssignRoles(t *testing.T) {
 }
 
 func TestOrganizationController_AssignMembers(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "1"
@@ -292,7 +293,7 @@ func TestOrganizationController_AssignMembers(t *testing.T) {
 }
 
 func TestOrganizationController_ChangeOrganizationName(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	organizationId := "1"

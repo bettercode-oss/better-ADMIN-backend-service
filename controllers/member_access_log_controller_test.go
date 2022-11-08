@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestMemberAccessLogController_LogMemberAccess_API_접근(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -44,7 +45,7 @@ func TestMemberAccessLogController_LogMemberAccess_API_접근(t *testing.T) {
 }
 
 func TestMemberAccessLogController_LogMemberAccess_화면_접근(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -70,7 +71,7 @@ func TestMemberAccessLogController_LogMemberAccess_화면_접근(t *testing.T) {
 }
 
 func TestMemberAccessLogController_LogMemberAccess_지원_하지_않는_TYPE(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -96,7 +97,7 @@ func TestMemberAccessLogController_LogMemberAccess_지원_하지_않는_TYPE(t *
 }
 
 func TestMemberAccessLogController_GetMemberAccessLogs(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/member-access-logs?page=1&pageSize=2", nil)
@@ -147,7 +148,7 @@ func TestMemberAccessLogController_GetMemberAccessLogs(t *testing.T) {
 }
 
 func TestMemberAccessLogController_GetMemberAccessLogs_By_멤버_아이디(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/member-access-logs?page=1&pageSize=2&memberId=1", nil)

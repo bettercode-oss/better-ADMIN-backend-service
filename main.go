@@ -134,7 +134,7 @@ func setUpDatabase() {
 
 func main() {
 	e := echo.New()
-	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Validator = &config.CustomValidator{Validator: validator.New()}
 	e.Pre(echomiddleware.RemoveTrailingSlash())
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
@@ -157,14 +157,6 @@ func main() {
 
 	color.Println(banner, color.Red("v"+Version), color.Blue(website))
 	e.Start(":2016")
-}
-
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
 }
 
 func connectWebSocket(ctx echo.Context) error {

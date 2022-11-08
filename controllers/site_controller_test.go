@@ -3,6 +3,7 @@ package controllers
 import (
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/security"
+	"better-admin-backend-service/testdata/testdb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestSiteController_SetDoorayLoginSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -42,7 +43,7 @@ func TestSiteController_SetDoorayLoginSetting(t *testing.T) {
 }
 
 func TestSiteController_GetDoorayLoginSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/dooray-login", nil)
@@ -64,7 +65,7 @@ func TestSiteController_GetDoorayLoginSetting(t *testing.T) {
 }
 
 func TestSiteController_GetGoogleWorkspaceLoginSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/google-workspace-login", nil)
@@ -93,7 +94,7 @@ func TestSiteController_GetGoogleWorkspaceLoginSetting(t *testing.T) {
 }
 
 func TestSiteController_SetGoogleWorkspaceLoginSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -122,7 +123,7 @@ func TestSiteController_SetGoogleWorkspaceLoginSetting(t *testing.T) {
 }
 
 func TestSiteController_GetSettingsSummary(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 	config.InitConfig("../config/config.json")
 
 	// given
@@ -150,7 +151,7 @@ func TestSiteController_GetSettingsSummary(t *testing.T) {
 }
 
 func TestSiteController_SetMemberAccessLogSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	requestBody := `{
@@ -175,7 +176,7 @@ func TestSiteController_SetMemberAccessLogSetting(t *testing.T) {
 }
 
 func TestSiteController_GetMemberAccessLogSetting(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/member-access-logs", nil)
@@ -200,7 +201,7 @@ func TestSiteController_GetMemberAccessLogSetting(t *testing.T) {
 }
 
 func TestSiteController_GetAppVersion(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/app-version", nil)
@@ -225,7 +226,7 @@ func TestSiteController_GetAppVersion(t *testing.T) {
 }
 
 func TestSiteController_IncreaseAppVersion(t *testing.T) {
-	DatabaseFixture{}.setUpDefault()
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/app-version", nil)

@@ -1,4 +1,4 @@
-package controllers
+package testdb
 
 import (
 	entity6 "better-admin-backend-service/domain/logging/entity"
@@ -9,13 +9,13 @@ import (
 	entity3 "better-admin-backend-service/domain/webhook/entity"
 	"fmt"
 	"github.com/go-testfixtures/testfixtures/v3"
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/gorm"
 )
 
 type DatabaseFixture struct {
 }
 
-func (DatabaseFixture) setUpDefault() {
+func (DatabaseFixture) SetUpDefault(gormDB *gorm.DB) {
 	fmt.Println("Set up database test fixture")
 	gormDB.AutoMigrate(&entity.MemberEntity{}, &entity4.SettingEntity{}, &entity5.PermissionEntity{}, &entity5.RoleEntity{},
 		&entity2.OrganizationEntity{}, &entity3.WebHookEntity{}, &entity3.WebHookMessageEntity{},
@@ -27,9 +27,9 @@ func (DatabaseFixture) setUpDefault() {
 	}
 
 	fixtures, err := testfixtures.New(
-		testfixtures.Database(sqlDB),                      // You database connection
-		testfixtures.Dialect("sqlite"),                    // Available: "postgresql", "timescaledb", "mysql", "mariadb", "sqlite" and "sqlserver"
-		testfixtures.Directory("../testdata/db_fixtures"), // the directory containing the YAML files
+		testfixtures.Database(sqlDB),                               // You database connection
+		testfixtures.Dialect("sqlite"),                             // Available: "postgresql", "timescaledb", "mysql", "mariadb", "sqlite" and "sqlserver"
+		testfixtures.Directory("../testdata/testdb/data_fixtures"), // the directory containing the YAML files
 		testfixtures.DangerousSkipTestDatabaseCheck(),
 	)
 
