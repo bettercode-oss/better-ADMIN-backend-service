@@ -144,6 +144,70 @@ func TestOrganizationController_GetOrganizations(t *testing.T) {
 	assert.Equal(t, expected, resp.([]interface{}))
 }
 
+func TestOrganizationController_GetOrganization(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations/:organizationId", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("organizationId")
+	ctx.SetParamValues("1")
+
+	// when
+	handleWithFilter(OrganizationController{}.GetOrganization, ctx)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"id":        float64(1),
+		"name":      "베터코드 연구소",
+		"createdAt": "1982-01-04T00:00:00Z",
+		"roles": []interface{}{
+			map[string]interface{}{
+				"id":   float64(1),
+				"name": "SYSTEM MANAGER",
+			}, map[string]interface{}{
+				"id":   float64(2),
+				"name": "MEMBER MANAGER",
+			},
+		},
+		"members": []interface{}{
+			map[string]interface{}{
+				"id":   float64(1),
+				"name": "사이트 관리자",
+			}, map[string]interface{}{
+				"id":   float64(2),
+				"name": "유영모",
+			},
+		},
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestOrganizationController_GetOrganization_ID_로_찾을수없는_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations/:organizationId", nil)
+	rec := httptest.NewRecorder()
+	ctx := echoApp.NewContext(req, rec)
+	ctx.SetParamNames("organizationId")
+	ctx.SetParamValues("100000")
+
+	// when
+	handleWithFilter(OrganizationController{}.GetOrganization, ctx)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
 func TestOrganizationController_ChangePosition_하위로_변경(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 

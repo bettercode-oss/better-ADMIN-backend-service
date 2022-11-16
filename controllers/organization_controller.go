@@ -20,6 +20,8 @@ func (controller OrganizationController) Init(g *echo.Group) {
 		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
 	g.GET("", controller.GetOrganizations,
 		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
+	g.GET("/:organizationId", controller.GetOrganization,
+		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
 	g.PUT("/:organizationId/name", controller.ChangeOrganizationName,
 		middlewares.CheckPermission([]string{domain.PermissionManageOrganization}))
 	g.PUT("/:organizationId/change-position", controller.ChangePosition,
@@ -196,4 +198,45 @@ func (OrganizationController) ChangeOrganizationName(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
+}
+
+func (controller OrganizationController) GetOrganization(ctx echo.Context) error {
+	organizationId, err := strconv.ParseInt(ctx.Param("organizationId"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	organizationEntity, err := services.OrganizationService{}.GetOrganization(ctx.Request().Context(), uint(organizationId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			return ctx.JSON(http.StatusNotFound, nil)
+		}
+		return err
+	}
+
+	organizationRoles := make([]dtos.OrganizationRole, 0)
+	for _, role := range organizationEntity.Roles {
+		organizationRoles = append(organizationRoles, dtos.OrganizationRole{
+			Id:   role.ID,
+			Name: role.Name,
+		})
+	}
+
+	organizationMembers := make([]dtos.OrganizationMember, 0)
+	for _, member := range organizationEntity.Members {
+		organizationMembers = append(organizationMembers, dtos.OrganizationMember{
+			Id:   member.ID,
+			Name: member.Name,
+		})
+	}
+
+	organizationDetails := dtos.OrganizationDetails{
+		Id:        organizationEntity.ID,
+		Name:      organizationEntity.Name,
+		CreatedAt: organizationEntity.CreatedAt,
+		Roles:     organizationRoles,
+		Members:   organizationMembers,
+	}
+
+	return ctx.JSON(http.StatusOK, organizationDetails)
 }

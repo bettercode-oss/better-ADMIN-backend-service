@@ -1,7 +1,7 @@
 - id: 1
   name: "베터코드 연구소"
   updated_at: RAW=datetime('now')
-  created_at: RAW=datetime('now')
+  created_at: RAW=datetime('1982-01-04 00:00')
   created_by: 1
   updated_by: 1
 - id: 3
