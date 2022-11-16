@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"github.com/labstack/echo"
+	"time"
 )
 
 type OrganizationInformation struct {
@@ -41,4 +42,12 @@ type OrganizationAssignMember struct {
 
 func (o OrganizationAssignMember) Validate(ctx echo.Context) error {
 	return ctx.Validate(o)
+}
+
+type OrganizationDetails struct {
+	Id        uint                 `json:"id"`
+	Name      string               `json:"name"`
+	CreatedAt time.Time            `json:"createdAt"`
+	Roles     []OrganizationRole   `json:"roles,omitempty"`
+	Members   []OrganizationMember `json:"members,omitempty"`
 }

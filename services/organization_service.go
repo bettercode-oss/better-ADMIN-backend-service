@@ -199,3 +199,7 @@ func (service OrganizationService) GetMemberAssignedAllRoleAndPermission(ctx con
 
 	return memberAssignedAllRoleAndPermission, nil
 }
+
+func (OrganizationService) GetOrganization(ctx context.Context, organizationId uint) (entity.OrganizationEntity, error) {
+	return repository.OrganizationRepository{}.FindById(ctx, organizationId)
+}
