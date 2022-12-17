@@ -1,36 +1,308 @@
 package controllers
 
 import (
-	"better-admin-backend-service/security"
 	"better-admin-backend-service/testdata/testdb"
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
-func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
+func TestMemberController_signUpMember(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=2&status=approved", nil)
+	requestBody := `{
+		"signId": "ymyoo1",
+		"name": "유영모",
+		"password": "1111"	
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/members", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusCreated, rec.Code)
+}
+
+func TestMemberController_signUpMember_아이디_중복(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	requestBody := `{
+		"signId": "ymyoo",
+		"name": "유영모",
+		"password": "1111"
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/members", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestMemberController_signUpMember_필수값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"name": "유영모",
+		"password": "1111"
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/members", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestMemberController_getCurrentMember_토큰이_없는_경우(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/my", nil)
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestMemberController_getCurrentMember_MemberId가_유효하지_않는_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/my", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1000,
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestMemberController_getCurrentMember(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/my", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+	fmt.Println(rec.Body.String())
+
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"id":          float64(1),
+		"type":        "site",
+		"typeName":    "사이트",
+		"name":        "사이트 관리자",
+		"roles":       []interface{}{"SYSTEM MANAGER", "MEMBER MANAGER"},
+		"permissions": []interface{}{"MANAGE_SYSTEM_SETTINGS", "MANAGE_MEMBERS"},
+		"picture":     "",
+	}
+	assert.Equal(t, expected, actual)
+}
+
+func TestMemberController_getMembers_권한이_없는_경우(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id":          1,
+		"Permissions": []string{"TC"},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+
+	expected := map[string]interface{}{
+		"result": []interface{}{
+			map[string]interface{}{
+				"id":           float64(1),
+				"signId":       "siteadm",
+				"type":         "site",
+				"typeName":     "사이트",
+				"candidateId":  "siteadm",
+				"name":         "사이트 관리자",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"id":           float64(2),
+				"signId":       "",
+				"type":         "dooray",
+				"typeName":     "두레이",
+				"candidateId":  "2222",
+				"name":         "유영모",
+				"createdAt":    "1982-01-04T00:00:00Z",
+				"lastAccessAt": "1982-01-05T00:00:00Z",
+				"roles": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "SYSTEM MANAGER",
+					},
+					map[string]interface{}{
+						"id":   float64(2),
+						"name": "MEMBER MANAGER",
+					},
+				},
+				"organizations": []interface{}{
+					map[string]interface{}{
+						"id":   float64(1),
+						"name": "베터코드 연구소",
+						"roles": []interface{}{
+							map[string]interface{}{
+								"id":   float64(1),
+								"name": "SYSTEM MANAGER",
+							},
+							map[string]interface{}{
+								"id":   float64(2),
+								"name": "MEMBER MANAGER",
+							},
+						},
+					},
+				},
+			},
+		},
+		"totalCount": float64(2),
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestMemberController_getMembers_승인된_멤버(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=2&status=approved", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	fmt.Println(rec.Body.String())
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 	expected := map[string]interface{}{
 		"result": []interface{}{
 			map[string]interface{}{
@@ -105,27 +377,36 @@ func TestMemberController_GetMembers_승인된_멤버(t *testing.T) {
 		"totalCount": float64(3),
 	}
 
-	assert.Equal(t, expected, resp)
-
+	assert.Equal(t, expected, actual)
 }
 
-func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
+func TestMemberController_getMembers_신청한_멤버(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=applied", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := map[string]interface{}{
 		"result": []interface{}{
@@ -145,26 +426,36 @@ func TestMemberController_GetMembers_신청한_멤버(t *testing.T) {
 		"totalCount": float64(1),
 	}
 
-	assert.Equal(t, expected, resp)
+	assert.Equal(t, expected, actual)
 }
 
-func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
+func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&name=유", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := map[string]interface{}{
 		"result": []interface{}{
@@ -231,26 +522,36 @@ func TestMemberController_GetMembers_by_멤버_이름(t *testing.T) {
 		"totalCount": float64(2),
 	}
 
-	assert.Equal(t, expected, resp)
+	assert.Equal(t, expected, actual)
 }
 
-func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
+func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&types=dooray,site", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := map[string]interface{}{
 		"result": []interface{}{
@@ -349,105 +650,152 @@ func TestMemberController_GetMembers_by_멤버_유형(t *testing.T) {
 		"totalCount": float64(3),
 	}
 
-	assert.Equal(t, expected, resp)
+	assert.Equal(t, expected, actual)
 }
 
-func TestMemberController_GetMembers_by_멤버_역할(t *testing.T) {
+func TestMemberController_getMember_권한이_없는_경우(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestMemberController_getMember_member_id_가_유효하지_않은_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/members/1000", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestMemberController_getMember(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/members/1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
+	assert.Equal(t, float64(1), actual.(map[string]interface{})["id"])
+	assert.Equal(t, "site", actual.(map[string]interface{})["type"])
+	assert.Equal(t, "사이트", actual.(map[string]interface{})["typeName"])
+	assert.Equal(t, "사이트 관리자", actual.(map[string]interface{})["name"])
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
-				"id":           float64(1),
-				"signId":       "siteadm",
-				"type":         "site",
-				"typeName":     "사이트",
-				"candidateId":  "siteadm",
-				"name":         "사이트 관리자",
-				"createdAt":    "1982-01-04T00:00:00Z",
-				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
-						"id":   float64(1),
-						"name": "SYSTEM MANAGER",
-					},
-				},
-				"organizations": []interface{}{
-					map[string]interface{}{
-						"id":   float64(1),
-						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
-								"id":   float64(1),
-								"name": "SYSTEM MANAGER",
-							},
-							map[string]interface{}{
-								"id":   float64(2),
-								"name": "MEMBER MANAGER",
-							},
-						},
-					},
-				},
-			},
-			map[string]interface{}{
-				"id":           float64(2),
-				"signId":       "",
-				"type":         "dooray",
-				"typeName":     "두레이",
-				"candidateId":  "2222",
-				"name":         "유영모",
-				"createdAt":    "1982-01-04T00:00:00Z",
-				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
-						"id":   float64(1),
-						"name": "SYSTEM MANAGER",
-					},
-					map[string]interface{}{
-						"id":   float64(2),
-						"name": "MEMBER MANAGER",
-					},
-				},
-				"organizations": []interface{}{
-					map[string]interface{}{
-						"id":   float64(1),
-						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
-								"id":   float64(1),
-								"name": "SYSTEM MANAGER",
-							},
-							map[string]interface{}{
-								"id":   float64(2),
-								"name": "MEMBER MANAGER",
-							},
-						},
-					},
-				},
-			},
-		},
-		"totalCount": float64(2),
-	}
-
-	assert.Equal(t, expected, resp)
+	memberRoles := actual.(map[string]interface{})["roles"].([]interface{})
+	assert.Equal(t, 1, len(memberRoles))
+	memberRoleIndex := 0
+	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
+	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
 }
 
-func TestMemberController_AssignRoles(t *testing.T) {
+func TestMemberController_assignRole_Bad_Request_필수_값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestMemberController_assignRole_권한_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"roleIds": [1, 2]
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestMemberController_assignRole_member_id가_유효하지_않는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -455,26 +803,59 @@ func TestMemberController_AssignRoles(t *testing.T) {
 		"roleIds": [1, 2]
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/assign-roles", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1000/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(MemberController{}.AssignRole, ctx)
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestMemberController_assignRole(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	requestBody := `{
+		"roleIds": [1, 2]
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
+func TestMemberController_assignRoles_역할이_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -482,168 +863,240 @@ func TestMemberController_AssignRoles_역할이_없는_경우(t *testing.T) {
 		"roleIds": []
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/assign-roles", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(MemberController{}.AssignRole, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestMemberController_GetMember(t *testing.T) {
+func TestMemberController_approveMember_member_id_가_유효하지_않은_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/members/:id", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1000/approved", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
 
-	// when
-	handleWithFilter(MemberController{}.GetMember, ctx)
-
-	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.Equal(t, float64(1), resp.(map[string]interface{})["id"])
-	assert.Equal(t, "site", resp.(map[string]interface{})["type"])
-	assert.Equal(t, "사이트", resp.(map[string]interface{})["typeName"])
-	assert.Equal(t, "사이트 관리자", resp.(map[string]interface{})["name"])
-
-	memberRoles := resp.(map[string]interface{})["roles"].([]interface{})
-	assert.Equal(t, 1, len(memberRoles))
-	memberRoleIndex := 0
-	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
-}
-
-func TestMemberController_SignUpMember(t *testing.T) {
-	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
-
-	// given
-	requestBody := `{
-		"signId": "ymyoo1",
-		"name": "유영모",
-		"password": "1111"	
-	}`
-
-	req := httptest.NewRequest(http.MethodPost, "/api/members", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-
-	// when
-	handleWithFilter(MemberController{}.SignUpMember, ctx)
-
-	// then
-	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusCreated, rec.Code)
-}
-
-func TestMemberController_SignUpMember_아이디_중복(t *testing.T) {
-	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
-
-	// given
-	requestBody := `{
-		"signId": "ymyoo",
-		"name": "유영모",
-		"password": "1111"	
-	}`
-
-	req := httptest.NewRequest(http.MethodPost, "/api/members", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-
-	// when
-	handleWithFilter(MemberController{}.SignUpMember, ctx)
-
-	// then
-	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}
-
-func TestMemberController_ApproveMember(t *testing.T) {
-	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
-
-	// given
-	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/approved", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("4")
-
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(MemberController{}.ApproveMember, ctx)
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestMemberController_approveMember_권한_확인(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/4/approved", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestMemberController_approveMember(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/4/approved", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestMemberController_ApproveMember_이미_승인된_경우(t *testing.T) {
+func TestMemberController_approveMember_이미_승인된_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/approved", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	req := httptest.NewRequest(http.MethodPut, "/api/members/1/approved", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(MemberController{}.ApproveMember, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
-func TestMemberController_GetSearchFilters(t *testing.T) {
+func TestMemberController_rejectMember_권한_확인(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/4/rejected", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestMemberController_rejectMember_member_id_가_유효하지_않은_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/10000/rejected", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestMemberController_rejectMember(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodPut, "/api/members/4/rejected", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestMemberController_getSearchFilters(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/search-filters", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_MEMBERS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(MemberController{}.GetSearchFilters, ctx)
-
-	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	ginApp.ServeHTTP(rec, req)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := []interface{}{
 		map[string]interface{}{
@@ -682,29 +1135,5 @@ func TestMemberController_GetSearchFilters(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, resp)
-}
-
-func TestMemberController_RejectMember(t *testing.T) {
-	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
-
-	// given
-	req := httptest.NewRequest(http.MethodPut, "/api/members/:id/rejected", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues("4")
-
-	userClaim := security.UserClaim{
-		Id: 2,
-	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
-
-	// when
-	handleWithFilter(MemberController{}.RejectMember, ctx)
-
-	// then
-	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, expected, actual)
 }

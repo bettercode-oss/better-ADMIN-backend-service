@@ -1,7 +1,6 @@
 package dtos
 
 import (
-	"github.com/labstack/echo"
 	"time"
 )
 
@@ -9,12 +8,8 @@ type PermissionInformation struct {
 	Id          uint   `json:"id"`
 	Type        string `json:"type"`
 	TypeName    string `json:"typeName"`
-	Name        string `json:"name" validate:"required"`
+	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-}
-
-func (p PermissionInformation) Validate(ctx echo.Context) error {
-	return ctx.Validate(p)
 }
 
 type PermissionDetails struct {
@@ -27,13 +22,9 @@ type PermissionDetails struct {
 }
 
 type RoleInformation struct {
-	Name                 string `json:"name" validate:"required"`
+	Name                 string `json:"name" binding:"required"`
 	Description          string `json:"description"`
-	AllowedPermissionIds []uint `json:"allowedPermissionIds" validate:"required"`
-}
-
-func (r RoleInformation) Validate(ctx echo.Context) error {
-	return ctx.Validate(r)
+	AllowedPermissionIds []uint `json:"allowedPermissionIds" binding:"required"`
 }
 
 type RoleSummary struct {

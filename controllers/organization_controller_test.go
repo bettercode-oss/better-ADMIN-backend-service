@@ -1,20 +1,73 @@
 package controllers
 
 import (
-	"better-admin-backend-service/security"
 	"better-admin-backend-service/testdata/testdb"
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
-func TestOrganizationController_CreateOrganization_최상위_조직으로_추가(t *testing.T) {
+func TestOrganizationController_createOrganization_권한_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"name": "테스트 조직"
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestOrganizationController_createOrganization_필수값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestOrganizationController_createOrganization_최상위_조직으로_추가(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -23,23 +76,28 @@ func TestOrganizationController_CreateOrganization_최상위_조직으로_추가
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.CreateOrganization, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestOrganizationController_CreateOrganization_상위조직이_있는_경우(t *testing.T) {
+func TestOrganizationController_createOrganization_상위조직이_있는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -49,39 +107,77 @@ func TestOrganizationController_CreateOrganization_상위조직이_있는_경우
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.CreateOrganization, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestOrganizationController_GetOrganizations(t *testing.T) {
+func TestOrganizationController_getOrganizations_권한_확인(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestOrganizationController_getOrganizations(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(OrganizationController{}.GetOrganizations, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := []interface{}{
 		map[string]interface{}{
@@ -141,21 +237,52 @@ func TestOrganizationController_GetOrganizations(t *testing.T) {
 			},
 		},
 	}
-	assert.Equal(t, expected, resp.([]interface{}))
+	assert.Equal(t, expected, actual.([]interface{}))
 }
 
-func TestOrganizationController_GetOrganization(t *testing.T) {
+func TestOrganizationController_getOrganization_권한_확인(t *testing.T) {
+	// given
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestOrganizationController_getOrganization(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/organizations/:organizationId", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues("1")
 
 	// when
-	handleWithFilter(OrganizationController{}.GetOrganization, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -191,195 +318,425 @@ func TestOrganizationController_GetOrganization(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestOrganizationController_GetOrganization_ID_로_찾을수없는_경우(t *testing.T) {
+func TestOrganizationController_getOrganization_ID_로_찾을수없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/organizations/:organizationId", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1000", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues("100000")
 
 	// when
-	handleWithFilter(OrganizationController{}.GetOrganization, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestOrganizationController_ChangePosition_하위로_변경(t *testing.T) {
+func TestOrganizationController_changeOrganizationName_권한_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"name": "강남 베터코드"
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/name", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"TC",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestOrganizationController_changeOrganizationName_id_가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "2"
+	requestBody := `{
+		"name": "강남 베터코드"
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/name", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestOrganizationController_changeOrganizationName(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	requestBody := `{
+		"name": "강남 베터코드"
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/name", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestOrganizationController_changePosition_id_가_없는_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
 	requestBody := `{
 		"parentOrganizationId": 1
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/organizations/:organizationId/change-position", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/change-position", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.ChangePosition, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestOrganizationController_ChangePosition_최상위로_변경(t *testing.T) {
+func TestOrganizationController_changePosition_하위로_변경(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "2"
+	requestBody := `{
+		"parentOrganizationId": 1
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/2/change-position", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestOrganizationController_changePosition_최상위로_변경(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
 	requestBody := `{}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/organizations/:organizationId/change-position", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/2/change-position", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.ChangePosition, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
+func TestOrganizationController_assignRoles_id_가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "4"
+	requestBody := `{
+		"roleIds": [1, 2]
+	}`
 
-	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/:organizationId", nil)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.DeleteOrganization, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
-}
-
-func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
-	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
-
-	// given
-	organizationId := "1"
-
-	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/:organizationId", nil)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
-
-	userClaim := security.UserClaim{
-		Id: 2,
-	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
-
-	// when
-	handleWithFilter(OrganizationController{}.DeleteOrganization, ctx)
-
-	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
 func TestOrganizationController_AssignRoles(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "1"
 	requestBody := `{
 		"roleIds": [1, 2]
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/organizations/:organizationId/assign-roles", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/assign-roles", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
 
 	// when
-	handleWithFilter(OrganizationController{}.AssignRoles, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestOrganizationController_AssignMembers(t *testing.T) {
+func TestOrganizationController_assignMembers_필수_값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-members", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestOrganizationController_assignMembers_id_가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "1"
 	requestBody := `{
 		"memberIds": [1, 2]
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/organizations/:organizationId/assign-members", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-members", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
 
 	// when
-	handleWithFilter(OrganizationController{}.AssignMembers, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestOrganizationController_ChangeOrganizationName(t *testing.T) {
+func TestOrganizationController_assignMembers(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	organizationId := "1"
 	requestBody := `{
-		"name": "강남 베터코드"
+		"memberIds": [1, 2]
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/organizations/:organizationId/name", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("organizationId")
-	ctx.SetParamValues(organizationId)
+	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/assign-members", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 2,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(OrganizationController{}.ChangeOrganizationName, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestOrganizationController_deleteOrganization_id가_없는_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/1000", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/4", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/1", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_ORGANIZATION",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 }

@@ -1,7 +1,6 @@
 package testdb
 
 import (
-	entity6 "better-admin-backend-service/domain/logging/entity"
 	"better-admin-backend-service/domain/member/entity"
 	entity2 "better-admin-backend-service/domain/organization/entity"
 	entity5 "better-admin-backend-service/domain/rbac/entity"
@@ -17,9 +16,9 @@ type DatabaseFixture struct {
 
 func (DatabaseFixture) SetUpDefault(gormDB *gorm.DB) {
 	fmt.Println("Set up database test fixture")
+	// TODO 중복 없애기 필요
 	gormDB.AutoMigrate(&entity.MemberEntity{}, &entity4.SettingEntity{}, &entity5.PermissionEntity{}, &entity5.RoleEntity{},
-		&entity2.OrganizationEntity{}, &entity3.WebHookEntity{}, &entity3.WebHookMessageEntity{},
-		&entity6.MemberAccessLogEntity{})
+		&entity2.OrganizationEntity{}, &entity3.WebHookEntity{}, &entity3.WebHookMessageEntity{})
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {

@@ -4,9 +4,10 @@ import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/domain/site/entity"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
 	"better-admin-backend-service/services"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"net/http"
@@ -15,61 +16,38 @@ import (
 type SiteController struct {
 }
 
-func (controller SiteController) Init(g *echo.Group) {
-	g.GET("/settings", controller.GetSettingsSummary)
-	g.PUT("/settings/dooray-login", controller.SetDoorayLoginSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.GET("/settings/dooray-login", controller.GetDoorayLoginSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.PUT("/settings/google-workspace-login", controller.SetGoogleWorkspaceLoginSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.GET("/settings/google-workspace-login", controller.GetGoogleWorkspaceLoginSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.PUT("/settings/member-access-logs", controller.SetMemberAccessLogSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.GET("/settings/member-access-logs", controller.GetMemberAccessLogSetting,
-		middlewares.CheckPermission([]string{domain.PermissionManageSystemSettings}))
-	g.GET("/settings/app-version", controller.GetAppVersion)
-	g.PUT("/settings/app-version", controller.IncreaseAppVersion)
+func (controller SiteController) Init(rg *gin.RouterGroup) {
+	route := rg.Group("/site")
+
+	route.GET("/settings",
+		middlewares.HttpEtagCache(0),
+		controller.getSettingsSummary)
+	route.GET("/settings/dooray-login",
+		middlewares.PermissionChecker([]string{domain.PermissionManageSystemSettings}),
+		middlewares.HttpEtagCache(0),
+		controller.getDoorayLoginSetting)
+	route.PUT("/settings/dooray-login",
+		middlewares.PermissionChecker([]string{domain.PermissionManageSystemSettings}),
+		controller.setDoorayLoginSetting)
+	route.GET("/settings/google-workspace-login",
+		middlewares.PermissionChecker([]string{domain.PermissionManageSystemSettings}),
+		middlewares.HttpEtagCache(0),
+		controller.getGoogleWorkspaceLoginSetting)
+	route.PUT("/settings/google-workspace-login",
+		middlewares.PermissionChecker([]string{domain.PermissionManageSystemSettings}),
+		controller.setGoogleWorkspaceLoginSetting)
+	route.GET("/settings/app-version",
+		middlewares.HttpEtagCache(0),
+		controller.getAppVersion)
+	route.PUT("/settings/app-version",
+		controller.increaseAppVersion)
 }
-
-func (controller SiteController) SetDoorayLoginSetting(ctx echo.Context) error {
-	var setting dtos.DoorayLoginSetting
-
-	if err := ctx.Bind(&setting); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := setting.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	service := services.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyDoorayLogin, setting); err != nil {
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, nil)
-}
-
-func (controller SiteController) GetDoorayLoginSetting(ctx echo.Context) error {
-	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyDoorayLogin)
-	if err != nil {
-		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusOK, dtos.DoorayLoginSetting{})
-		}
-
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, setting)
-}
-
-func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
-	settings, err := services.SiteService{}.GetSettings(ctx.Request().Context())
+func (SiteController) getSettingsSummary(ctx *gin.Context) {
+	settings, err := services.SiteService{}.GetSettings(ctx.Request.Context())
 
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	summary := dtos.SiteSettingsSummary{}
@@ -79,7 +57,8 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var doorayLoginSetting dtos.DoorayLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &doorayLoginSetting)
 			if err != nil {
-				return errors.Wrap(err, "map to struct decode error")
+				ctx.JSON(http.StatusInternalServerError, errors.Wrap(err, "map to struct decode error"))
+				return
 			}
 
 			if *doorayLoginSetting.Used {
@@ -91,7 +70,8 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			var googleWorkspaceSetting dtos.GoogleWorkspaceLoginSetting
 			err := mapstructure.Decode(setting.ValueObject, &googleWorkspaceSetting)
 			if err != nil {
-				return errors.Wrap(err, "map to struct decode error")
+				ctx.JSON(http.StatusInternalServerError, errors.Wrap(err, "map to struct decode error"))
+				return
 			}
 
 			if *googleWorkspaceSetting.Used {
@@ -100,87 +80,90 @@ func (controller SiteController) GetSettingsSummary(ctx echo.Context) error {
 			}
 		}
 	}
-	return ctx.JSON(http.StatusOK, summary)
+
+	ctx.JSON(http.StatusOK, summary)
 }
 
-func (SiteController) GetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
-	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyGoogleWorkspaceLogin)
+func (SiteController) getDoorayLoginSetting(ctx *gin.Context) {
+	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request.Context(), entity.SettingKeyDoorayLogin)
 	if err != nil {
 		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusOK, dtos.GoogleWorkspaceLoginSetting{})
+			ctx.JSON(http.StatusOK, dtos.DoorayLoginSetting{})
+			return
 		}
 
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, setting)
+	ctx.JSON(http.StatusOK, setting)
 }
 
-func (SiteController) SetGoogleWorkspaceLoginSetting(ctx echo.Context) error {
+func (SiteController) setDoorayLoginSetting(ctx *gin.Context) {
+	var setting dtos.DoorayLoginSetting
+
+	if err := ctx.BindJSON(&setting); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	service := services.SiteService{}
+	if err := service.SetSettingWithKey(ctx.Request.Context(), entity.SettingKeyDoorayLogin, setting); err != nil {
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+func (SiteController) getGoogleWorkspaceLoginSetting(ctx *gin.Context) {
+	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request.Context(), entity.SettingKeyGoogleWorkspaceLogin)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			ctx.JSON(http.StatusOK, dtos.GoogleWorkspaceLoginSetting{})
+			return
+		}
+
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, setting)
+}
+
+func (SiteController) setGoogleWorkspaceLoginSetting(ctx *gin.Context) {
 	var setting dtos.GoogleWorkspaceLoginSetting
 
-	if err := ctx.Bind(&setting); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := setting.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := ctx.BindJSON(&setting); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
 	service := services.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyGoogleWorkspaceLogin, setting); err != nil {
-		return err
+	if err := service.SetSettingWithKey(ctx.Request.Context(), entity.SettingKeyGoogleWorkspaceLogin, setting); err != nil {
+		ctx.JSON(http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (SiteController) SetMemberAccessLogSetting(ctx echo.Context) error {
-	var setting dtos.MemberAccessLogSetting
-
-	if err := ctx.Bind(&setting); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := setting.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	service := services.SiteService{}
-	if err := service.SetSettingWithKey(ctx.Request().Context(), entity.SettingKeyMemberAccessLog, setting); err != nil {
-		return err
-	}
-
-	return ctx.NoContent(http.StatusNoContent)
-}
-
-func (SiteController) GetMemberAccessLogSetting(ctx echo.Context) error {
-	setting, err := services.SiteService{}.GetSettingWithKey(ctx.Request().Context(), entity.SettingKeyMemberAccessLog)
+func (SiteController) getAppVersion(ctx *gin.Context) {
+	appVersion, err := services.SiteService{}.GetAppVersion(ctx.Request.Context())
 	if err != nil {
-		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusOK, dtos.MemberAccessLogSetting{})
-		}
-
-		return err
+		ctx.JSON(http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, setting)
+	ctx.JSON(http.StatusOK, appVersion)
 }
 
-func (SiteController) GetAppVersion(ctx echo.Context) error {
-	appVersion, err := services.SiteService{}.GetAppVersion(ctx.Request().Context())
+func (SiteController) increaseAppVersion(ctx *gin.Context) {
+	err := services.SiteService{}.IncreaseAppVersion(ctx.Request.Context())
 	if err != nil {
-		return err
+		ctx.JSON(http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, appVersion)
-}
-
-func (SiteController) IncreaseAppVersion(ctx echo.Context) error {
-	err := services.SiteService{}.IncreaseAppVersion(ctx.Request().Context())
-	if err != nil {
-		return err
-	}
-
-	return ctx.NoContent(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }

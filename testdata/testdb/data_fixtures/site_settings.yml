@@ -12,13 +12,6 @@
   created_at: RAW=datetime('now')
   created_by: 1
   updated_by: 1
-- id: 3
-  key: "member-access-log"
-  value: { "retentionDays": 30 }
-  updated_at: RAW=datetime('now')
-  created_at: RAW=datetime('now')
-  created_by: 1
-  updated_by: 1
 - id: 4
   key: "app-version"
   value: { "version": 2 }

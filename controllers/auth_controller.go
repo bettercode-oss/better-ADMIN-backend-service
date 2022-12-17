@@ -3,11 +3,13 @@ package controllers
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/security"
-	memberService "better-admin-backend-service/services"
+	"better-admin-backend-service/services"
 	"context"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -15,79 +17,169 @@ import (
 type AuthController struct {
 }
 
-func (controller AuthController) Init(g *echo.Group) {
-	g.POST("", controller.AuthWithSignIdPassword)
-	g.POST("/dooray", controller.AuthWithDoorayIdPassword)
-	g.GET("/google-workspace", controller.AuthWithGoogleWorkspaceAccount)
-	g.GET("/check", controller.CheckAuth)
-	g.POST("/logout", controller.Logout)
-	g.POST("/token/refresh", controller.RefreshAccessToken)
+func (controller AuthController) Init(rg *gin.RouterGroup) {
+	route := rg.Group("/auth")
+
+	route.POST("", controller.authWithSignIdPassword)
+	route.POST("/dooray", controller.authWithDoorayIdPassword)
+	route.GET("/google-workspace", controller.authWithGoogleWorkspaceAccount)
+	route.GET("/check", controller.checkAuth)
+	route.POST("/logout", controller.logout)
+	route.POST("/token/refresh", controller.refreshAccessToken)
 }
 
-func (AuthController) AuthWithSignIdPassword(ctx echo.Context) error {
+func (AuthController) authWithSignIdPassword(ctx *gin.Context) {
 	var memberSignIn dtos.MemberSignIn
 
-	if err := ctx.Bind(&memberSignIn); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := ctx.BindJSON(&memberSignIn); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	if err := memberSignIn.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	jwtToken, err := memberService.AuthService{}.AuthWithSignIdPassword(ctx.Request().Context(), memberSignIn)
+	jwtToken, err := services.AuthService{}.AuthWithSignIdPassword(ctx.Request.Context(), memberSignIn)
 	if err != nil {
 		if err == domain.ErrNotFound || err == domain.ErrAuthentication {
-			return ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
 		}
 
 		if err == domain.ErrUnApproved {
-			return ctx.JSON(http.StatusNotAcceptable, err.Error())
+			ctx.JSON(http.StatusNotAcceptable, err.Error())
+			return
 		}
 
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	refreshToken, err := ctx.Cookie("refreshToken")
+	refreshToken, err := ctx.Request.Cookie("refreshToken")
 	if err != nil || len(refreshToken.Value) == 0 {
 		cookie := new(http.Cookie)
 		cookie.Name = "refreshToken"
 		cookie.Value = jwtToken.RefreshToken
 		cookie.HttpOnly = true
 		cookie.Path = "/"
-		cookie.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(cookie)
+		cookie.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, cookie)
 	} else {
 		refreshToken.Value = jwtToken.RefreshToken
 		refreshToken.HttpOnly = true
 		refreshToken.Path = "/"
-		refreshToken.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(refreshToken)
+		refreshToken.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, refreshToken)
 	}
 
 	result := map[string]string{}
 	result["accessToken"] = jwtToken.AccessToken
-	return ctx.JSON(http.StatusOK, result)
+
+	ctx.JSON(http.StatusOK, result)
 }
 
-func (AuthController) CheckAuth(ctx echo.Context) error {
-	refreshToken, err := ctx.Cookie("refreshToken")
+func (AuthController) authWithDoorayIdPassword(ctx *gin.Context) {
+	var memberSignIn dtos.MemberSignIn
+
+	if err := ctx.BindJSON(&memberSignIn); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	jwtToken, err := services.AuthService{}.AuthWithDoorayIdAndPassword(ctx.Request.Context(), memberSignIn)
+	if err != nil {
+		if err == domain.ErrAuthentication {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	refreshToken, err := ctx.Request.Cookie("refreshToken")
 	if err != nil || len(refreshToken.Value) == 0 {
-		return ctx.JSON(http.StatusNotAcceptable, nil)
+		cookie := new(http.Cookie)
+		cookie.Name = "refreshToken"
+		cookie.Value = jwtToken.RefreshToken
+		cookie.HttpOnly = true
+		cookie.Path = "/"
+		cookie.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, cookie)
+	} else {
+		refreshToken.Value = jwtToken.RefreshToken
+		refreshToken.HttpOnly = true
+		refreshToken.Path = "/"
+		refreshToken.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, refreshToken)
+	}
+
+	result := map[string]string{}
+	result["accessToken"] = jwtToken.AccessToken
+
+	ctx.JSON(http.StatusOK, result)
+}
+
+func (AuthController) authWithGoogleWorkspaceAccount(ctx *gin.Context) {
+	code := ctx.Query("code")
+	redirect := ctx.Query("state")
+
+	jwtToken, err := services.AuthService{}.AuthWithGoogleWorkspaceAccount(ctx.Request.Context(), code)
+	if err != nil {
+		if e, ok := err.(*domain.ErrInvalidGoogleWorkspaceAccount); ok {
+			ctx.Redirect(http.StatusFound, redirect+fmt.Sprintf("&error=%v 로 끝나는 메일 주소만 사용 가능 합니다", e.Domain))
+			return
+		}
+
+		ctx.Redirect(http.StatusFound, redirect+"&error=server-internal-error")
+		return
+	}
+
+	refreshToken, err := ctx.Request.Cookie("refreshToken")
+	if err != nil || len(refreshToken.Value) == 0 {
+		cookie := new(http.Cookie)
+		cookie.Name = "refreshToken"
+		cookie.Value = jwtToken.RefreshToken
+		cookie.HttpOnly = true
+		cookie.Path = "/"
+		cookie.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, cookie)
+	} else {
+		refreshToken.Value = jwtToken.RefreshToken
+		refreshToken.HttpOnly = true
+		refreshToken.Path = "/"
+		refreshToken.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
+
+		http.SetCookie(ctx.Writer, refreshToken)
+	}
+
+	ctx.Redirect(http.StatusFound, redirect+"&accessToken="+jwtToken.AccessToken)
+}
+
+func (AuthController) checkAuth(ctx *gin.Context) {
+	refreshToken, err := ctx.Request.Cookie("refreshToken")
+	if err != nil || len(refreshToken.Value) == 0 {
+		ctx.JSON(http.StatusNotAcceptable, nil)
+		return
 	}
 
 	jwtAuthentication := security.JwtAuthentication{}
 	if err := jwtAuthentication.ValidateToken(refreshToken.Value); err != nil {
-		return ctx.JSON(http.StatusNotAcceptable, nil)
+		log.Error(err)
+		ctx.JSON(http.StatusNotAcceptable, nil)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (AuthController) Logout(ctx echo.Context) error {
-	cookie, err := ctx.Cookie("refreshToken")
+func (AuthController) logout(ctx *gin.Context) {
+	cookie, err := ctx.Request.Cookie("refreshToken")
 	if err != nil {
 		ctx.JSON(http.StatusOK, nil)
+		return
 	}
 
 	cookie.Value = ""
@@ -95,15 +187,16 @@ func (AuthController) Logout(ctx echo.Context) error {
 	cookie.Path = "/"
 	cookie.Expires = time.Unix(0, 0)
 	cookie.MaxAge = -1
-	ctx.SetCookie(cookie)
+	http.SetCookie(ctx.Writer, cookie)
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (controller AuthController) RefreshAccessToken(ctx echo.Context) error {
-	cookie, err := ctx.Cookie("refreshToken")
+func (controller AuthController) refreshAccessToken(ctx *gin.Context) {
+	cookie, err := ctx.Request.Cookie("refreshToken")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, nil)
+		return
 	}
 
 	refreshToken := cookie.Value
@@ -111,17 +204,19 @@ func (controller AuthController) RefreshAccessToken(ctx echo.Context) error {
 	accessToken, err := jwtAuthentication.RefreshAccessToken(refreshToken)
 
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	err = controller.logMemberAccessAtByToken(ctx.Request().Context(), refreshToken)
+	err = controller.logMemberAccessAtByToken(ctx.Request.Context(), refreshToken)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	result := map[string]string{}
 	result["accessToken"] = accessToken
-	return ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (AuthController) logMemberAccessAtByToken(ctx context.Context, token string) error {
@@ -131,84 +226,10 @@ func (AuthController) logMemberAccessAtByToken(ctx context.Context, token string
 		return err
 	}
 
-	err = memberService.MemberService{}.UpdateMemberLastAccessAt(ctx, userClaim.Id)
+	err = services.MemberService{}.UpdateMemberLastAccessAt(ctx, userClaim.Id)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (controller AuthController) AuthWithDoorayIdPassword(ctx echo.Context) error {
-	var memberSignIn dtos.MemberSignIn
-
-	if err := ctx.Bind(&memberSignIn); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := memberSignIn.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	jwtToken, err := memberService.AuthService{}.AuthWithDoorayIdAndPassword(ctx.Request().Context(), memberSignIn)
-	if err != nil {
-		if err == domain.ErrAuthentication {
-			return ctx.JSON(http.StatusBadRequest, err.Error())
-		}
-		return err
-	}
-
-	refreshToken, err := ctx.Cookie("refreshToken")
-	if err != nil || len(refreshToken.Value) == 0 {
-		cookie := new(http.Cookie)
-		cookie.Name = "refreshToken"
-		cookie.Value = jwtToken.RefreshToken
-		cookie.HttpOnly = true
-		cookie.Path = "/"
-		cookie.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(cookie)
-	} else {
-		refreshToken.Value = jwtToken.RefreshToken
-		refreshToken.HttpOnly = true
-		refreshToken.Path = "/"
-		refreshToken.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(refreshToken)
-	}
-
-	result := map[string]string{}
-	result["accessToken"] = jwtToken.AccessToken
-	return ctx.JSON(http.StatusOK, result)
-}
-
-func (AuthController) AuthWithGoogleWorkspaceAccount(ctx echo.Context) error {
-	code := ctx.QueryParam("code")
-	redirect := ctx.QueryParam("state")
-
-	jwtToken, err := memberService.AuthService{}.AuthWithGoogleWorkspaceAccount(ctx.Request().Context(), code)
-	if err != nil {
-		if e, ok := err.(*domain.ErrInvalidGoogleWorkspaceAccount); ok {
-			return ctx.Redirect(http.StatusFound, redirect+fmt.Sprintf("&error=%v 로 끝나는 메일 주소만 사용 가능 합니다.", e.Domain))
-		}
-
-		return ctx.Redirect(http.StatusFound, redirect+"&error=server-internal-error")
-	}
-
-	refreshToken, err := ctx.Cookie("refreshToken")
-	if err != nil || len(refreshToken.Value) == 0 {
-		cookie := new(http.Cookie)
-		cookie.Name = "refreshToken"
-		cookie.Value = jwtToken.RefreshToken
-		cookie.HttpOnly = true
-		cookie.Path = "/"
-		cookie.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(cookie)
-	} else {
-		refreshToken.Value = jwtToken.RefreshToken
-		refreshToken.HttpOnly = true
-		refreshToken.Path = "/"
-		refreshToken.Expires = jwtToken.RefreshTokenExpires
-		ctx.SetCookie(refreshToken)
-	}
-
-	return ctx.Redirect(http.StatusFound, redirect+"&accessToken="+jwtToken.AccessToken)
 }

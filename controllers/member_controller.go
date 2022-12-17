@@ -6,8 +6,8 @@ import (
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
-	rbacService "better-admin-backend-service/services"
-	"github.com/labstack/echo"
+	"better-admin-backend-service/services"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,27 +16,70 @@ import (
 type MemberController struct {
 }
 
-func (controller MemberController) Init(g *echo.Group) {
-	g.POST("", controller.SignUpMember)
-	g.GET("/my", controller.GetCurrentMember, middlewares.CheckPermission([]string{"*"}))
-	g.GET("", controller.GetMembers, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
-	g.GET("/:id", controller.GetMember, middlewares.CheckPermission([]string{"*"}))
-	g.PUT("/:id/assign-roles", controller.AssignRole, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
-	g.PUT("/:id/approved", controller.ApproveMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
-	g.PUT("/:id/rejected", controller.RejectMember, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
-	g.GET("/search-filters", controller.GetSearchFilters, middlewares.CheckPermission([]string{domain.PermissionManageMembers}))
+func (controller MemberController) Init(rg *gin.RouterGroup) {
+	route := rg.Group("/members")
+
+	route.POST("", controller.signUpMember)
+	route.GET("", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		middlewares.HttpEtagCache(0),
+		controller.getMembers)
+	route.GET("/my", middlewares.PermissionChecker([]string{"*"}),
+		controller.getCurrentMember)
+	route.GET("/:id", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		middlewares.HttpEtagCache(0),
+		controller.getMember)
+	route.PUT("/:id/assign-roles", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		controller.assignRole)
+	route.PUT("/:id/approved", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		controller.approveMember)
+	route.PUT("/:id/rejected", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		controller.rejectMember)
+	route.GET("/search-filters", middlewares.PermissionChecker([]string{domain.PermissionManageMembers}),
+		middlewares.HttpEtagCache(0),
+		controller.getSearchFilters)
 }
 
-func (MemberController) GetCurrentMember(ctx echo.Context) error {
-	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx.Request().Context())
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+func (MemberController) signUpMember(ctx *gin.Context) {
+	var memberSignUp dtos.MemberSignUp
+	if err := ctx.BindJSON(&memberSignUp); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	memberEntity, err := rbacService.MemberService{}.GetMemberById(ctx.Request().Context(), userClaim.Id)
-	memberAssignedAllRoleAndPermission, err := rbacService.OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx.Request().Context(), memberEntity)
+	err := services.MemberService{}.SignUpMember(ctx.Request.Context(), memberSignUp)
 	if err != nil {
-		return err
+		if err == domain.ErrDuplicated {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusCreated)
+}
+
+func (MemberController) getCurrentMember(ctx *gin.Context) {
+	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	memberEntity, err := services.MemberService{}.GetMemberById(ctx.Request.Context(), userClaim.Id)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	memberAssignedAllRoleAndPermission, err := services.OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx.Request.Context(), memberEntity)
+	if err != nil {
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	memberInformation := dtos.CurrentMember{
@@ -49,32 +92,33 @@ func (MemberController) GetCurrentMember(ctx echo.Context) error {
 		Picture:     memberEntity.Picture,
 	}
 
-	return ctx.JSON(http.StatusOK, memberInformation)
+	ctx.JSON(http.StatusOK, memberInformation)
 }
 
-func (MemberController) GetMembers(ctx echo.Context) error {
-	pageable := dtos.GetPageableFromRequest(ctx)
+func (MemberController) getMembers(ctx *gin.Context) {
+	pageable := dtos.NewPageableFromRequest(ctx)
 	filters := map[string]interface{}{}
 
-	if len(ctx.QueryParam("status")) > 0 {
-		filters["status"] = ctx.QueryParam("status")
+	if len(ctx.Query("status")) > 0 {
+		filters["status"] = ctx.Query("status")
 	}
 
-	if len(ctx.QueryParam("name")) > 0 {
-		filters["name"] = ctx.QueryParam("name")
+	if len(ctx.Query("name")) > 0 {
+		filters["name"] = ctx.Query("name")
 	}
 
-	if len(ctx.QueryParam("types")) > 0 {
-		filters["types"] = strings.Split(ctx.QueryParam("types"), ",")
+	if len(ctx.Query("types")) > 0 {
+		filters["types"] = strings.Split(ctx.Query("types"), ",")
 	}
 
-	if len(ctx.QueryParam("roleIds")) > 0 {
-		filters["roleIds"] = strings.Split(ctx.QueryParam("roleIds"), ",")
+	if len(ctx.Query("roleIds")) > 0 {
+		filters["roleIds"] = strings.Split(ctx.Query("roleIds"), ",")
 	}
 
-	memberEntities, totalCount, err := rbacService.MemberService{}.GetMembers(ctx.Request().Context(), filters, pageable)
+	memberEntities, totalCount, err := services.MemberService{}.GetMembers(ctx.Request.Context(), filters, pageable)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	memberIds := make([]uint, 0)
@@ -84,9 +128,10 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 
 	filters = map[string]interface{}{}
 	filters["memberIds"] = memberIds
-	organizationsOfMembers, err := rbacService.OrganizationService{}.GetAllOrganizations(ctx.Request().Context(), filters)
+	organizationsOfMembers, err := services.OrganizationService{}.GetAllOrganizations(ctx.Request.Context(), filters)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	var members = make([]dtos.MemberInformation, 0)
@@ -139,41 +184,24 @@ func (MemberController) GetMembers(ctx echo.Context) error {
 		TotalCount: totalCount,
 	}
 
-	return ctx.JSON(http.StatusOK, pageResult)
+	ctx.JSON(http.StatusOK, pageResult)
 }
 
-func (MemberController) AssignRole(ctx echo.Context) error {
+func (MemberController) getMember(ctx *gin.Context) {
 	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	var assignRole dtos.MemberAssignRole
-	if err := ctx.Bind(&assignRole); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := assignRole.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err = rbacService.MemberService{}.AssignRole(ctx.Request().Context(), uint(memberId), assignRole)
+	memberEntity, err := services.MemberService{}.GetMember(ctx.Request.Context(), uint(memberId))
 	if err != nil {
-		return err
-	}
-
-	return ctx.NoContent(http.StatusNoContent)
-}
-
-func (MemberController) GetMember(ctx echo.Context) error {
-	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	memberEntity, err := rbacService.MemberService{}.GetMember(ctx.Request().Context(), uint(memberId))
-	if err != nil {
-		return err
+		if err == domain.ErrNotFound {
+			ctx.JSON(http.StatusNotFound, err)
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	var roles = make([]dtos.MemberRole, 0)
@@ -191,48 +219,60 @@ func (MemberController) GetMember(ctx echo.Context) error {
 		MemberRoles: roles,
 	}
 
-	return ctx.JSON(http.StatusOK, memberInformation)
+	ctx.JSON(http.StatusOK, memberInformation)
 }
 
-func (MemberController) SignUpMember(ctx echo.Context) error {
-	var memberSignUp dtos.MemberSignUp
-	if err := ctx.Bind(&memberSignUp); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := memberSignUp.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err := rbacService.MemberService{}.SignUpMember(ctx.Request().Context(), memberSignUp)
-	if err != nil {
-		if err == domain.ErrDuplicated {
-			return ctx.JSON(http.StatusBadRequest, err.Error())
-		}
-		return err
-	}
-
-	return ctx.JSON(http.StatusCreated, nil)
-}
-
-func (MemberController) ApproveMember(ctx echo.Context) error {
+func (MemberController) assignRole(ctx *gin.Context) {
 	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	err = rbacService.MemberService{}.ApproveMember(ctx.Request().Context(), uint(memberId))
+	var assignRole dtos.MemberAssignRole
+	if err := ctx.BindJSON(&assignRole); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = services.MemberService{}.AssignRole(ctx.Request.Context(), uint(memberId), assignRole)
 	if err != nil {
-		if err == domain.ErrAlreadyApproved {
-			return ctx.JSON(http.StatusBadRequest, err.Error())
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (MemberController) GetSearchFilters(ctx echo.Context) error {
+func (MemberController) approveMember(ctx *gin.Context) {
+	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = services.MemberService{}.ApproveMember(ctx.Request.Context(), uint(memberId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if err == domain.ErrAlreadyApproved {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+func (MemberController) getSearchFilters(ctx *gin.Context) {
 	filters := make([]dtos.SearchFilter, 0)
 
 	memberTypeSearchFilter := dtos.SearchFilter{
@@ -254,9 +294,10 @@ func (MemberController) GetSearchFilters(ctx echo.Context) error {
 	}
 	filters = append(filters, memberTypeSearchFilter)
 
-	allRoles, _, err := rbacService.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), nil, dtos.Pageable{Page: 0})
+	allRoles, _, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request.Context(), nil, dtos.Pageable{Page: 0})
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	roleSearchFilter := dtos.SearchFilter{
@@ -272,22 +313,25 @@ func (MemberController) GetSearchFilters(ctx echo.Context) error {
 	roleSearchFilter.Filters = roleFilters
 	filters = append(filters, roleSearchFilter)
 
-	return ctx.JSON(http.StatusOK, filters)
+	ctx.JSON(http.StatusOK, filters)
 }
 
-func (MemberController) RejectMember(ctx echo.Context) error {
+func (MemberController) rejectMember(ctx *gin.Context) {
 	memberId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	err = rbacService.MemberService{}.RejectMember(ctx.Request().Context(), uint(memberId))
+	err = services.MemberService{}.RejectMember(ctx.Request.Context(), uint(memberId))
 	if err != nil {
 		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }
