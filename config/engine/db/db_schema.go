@@ -1,8 +1,7 @@
-package main
+package db
 
 import (
 	"better-admin-backend-service/domain"
-	logging "better-admin-backend-service/domain/logging/entity"
 	member "better-admin-backend-service/domain/member/entity"
 	organization "better-admin-backend-service/domain/organization/entity"
 	rbac "better-admin-backend-service/domain/rbac/entity"
@@ -18,8 +17,7 @@ func initializeDatabase(db *gorm.DB) error {
 	// 테이블 생성
 	if err := db.AutoMigrate(&member.MemberEntity{}, &site.SettingEntity{}, &rbac.PermissionEntity{},
 		&rbac.RoleEntity{}, &organization.OrganizationEntity{},
-		&webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{},
-		&logging.MemberAccessLogEntity{}); err != nil {
+		&webhook.WebHookEntity{}, &webhook.WebHookMessageEntity{}); err != nil {
 		return err
 	}
 
@@ -93,18 +91,6 @@ func initializeDatabase(db *gorm.DB) error {
 
 		// 사이트 관리자에 사전 정의된 두가지 역할을 할당한다.(시스템 관리자, 멤버 관리자)
 		if err := db.Exec("INSERT INTO member_roles(member_entity_id, role_entity_id) values(1, 1),(1, 2)").Error; err != nil {
-			return err
-		}
-	}
-
-	// 기본 settings
-	var siteSettingCount int64
-	db.Raw("SELECT count(*) FROM site_settings WHERE deleted_at is NULL").Scan(&siteSettingCount)
-
-	if siteSettingCount == 0 {
-		if err := db.Exec("INSERT INTO site_settings (id, created_at, updated_at, deleted_at, `key`, value, created_by, updated_by) "+
-			"VALUES (1,?,?,NULL,'member-access-log','{\"retentionDays\":30}', 1, 1)",
-			time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 	}

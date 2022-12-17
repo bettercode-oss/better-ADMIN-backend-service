@@ -1,7 +1,7 @@
 package dtos
 
 import (
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"strconv"
 )
 
@@ -21,13 +21,13 @@ func (p Pageable) GetOffset() int {
 	return (p.Page - 1) * p.PageSize
 }
 
-func GetPageableFromRequest(ctx echo.Context) Pageable {
-	page, err := strconv.Atoi(ctx.QueryParam("page"))
+func NewPageableFromRequest(ctx *gin.Context) Pageable {
+	page, err := strconv.Atoi(ctx.Query("page"))
 	if err != nil {
 		page = 1
 	}
 
-	pageSize, err := strconv.Atoi(ctx.QueryParam("pageSize"))
+	pageSize, err := strconv.Atoi(ctx.Query("pageSize"))
 	if err != nil {
 		pageSize = PageSize
 	}

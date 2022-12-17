@@ -2,31 +2,34 @@ package controllers
 
 import (
 	"better-admin-backend-service/config"
-	"better-admin-backend-service/middlewares"
+	"better-admin-backend-service/config/engine/httpserver"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	_ "github.com/mattn/go-sqlite3"
-	"net/http"
-
-	//"gopkg.in/testfixtures.v2"
-
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"time"
 )
 
 var (
-	gormDB           *gorm.DB
-	echoApp          *echo.Echo
-	handleWithFilter func(handlerFunc echo.HandlerFunc, c echo.Context) error
+	gormDB *gorm.DB
+	ginApp *gin.Engine
 )
 
 func init() {
-	setUpEcho(setUpDatabase())
+	setUpTestGinServer()
 }
 
-func setUpDatabase() *gorm.DB {
+func setUpTestGinServer() {
+	config.InitConfig("../config/config.json")
+	ginApp = httpserver.NewGinEngine()
+	httpserver.AddMiddlewares(ginApp, setUpTestDatabase())
+	AddRoutes(ginApp)
+}
+
+func setUpTestDatabase() *gorm.DB {
 	fmt.Println("Set up database")
 	db, err := gorm.Open(sqlite.Open("file::memory:?mode=memory&cache=shared"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -39,17 +42,12 @@ func setUpDatabase() *gorm.DB {
 	return gormDB
 }
 
-func setUpEcho(gormDB *gorm.DB) {
-	fmt.Println("Set up echo")
-	echoApp = echo.New()
-	echoApp.Validator = &config.CustomValidator{Validator: validator.New()}
-	db := middlewares.GORMDb(gormDB)
-	handleWithFilter = func(handlerFunc echo.HandlerFunc, c echo.Context) error {
-		err := db(handlerFunc)(c)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("%+v", err))
-			c.String(http.StatusInternalServerError, "Internal Server Error")
-		}
-		return err
+func generateTestJWT(claim map[string]interface{}, duration time.Duration) (string, error) {
+	token := jwt.MapClaims{}
+	for key, value := range claim {
+		token[key] = value
 	}
+
+	token["exp"] = time.Now().Add(duration).Unix()
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, token).SignedString([]byte(config.Config.JwtSecret))
 }

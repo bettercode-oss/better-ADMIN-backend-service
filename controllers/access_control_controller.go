@@ -3,9 +3,10 @@ package controllers
 import (
 	"better-admin-backend-service/domain"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/middlewares"
 	"better-admin-backend-service/services"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
@@ -13,63 +14,69 @@ import (
 type AccessControlController struct {
 }
 
-func (controller AccessControlController) Init(g *echo.Group) {
-	g.POST("/permissions", controller.CreatePermission,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.GET("/permissions", controller.GetPermissions,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.GET("/permissions/:permissionId", controller.GetPermission,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.PUT("/permissions/:permissionId", controller.UpdatePermission,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.DELETE("/permissions/:permissionId", controller.DeletePermission,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.POST("/roles", controller.CreateRole,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.GET("/roles", controller.GetRoles,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.GET("/roles/:roleId", controller.GetRole,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.PUT("/roles/:roleId", controller.UpdateRole,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
-	g.DELETE("/roles/:roleId", controller.DeleteRole,
-		middlewares.CheckPermission([]string{domain.PermissionManageAccessControl}))
+func (controller AccessControlController) Init(rg *gin.RouterGroup) {
+	route := rg.Group("/access-control")
+
+	route.POST("/permissions", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.createPermission)
+	route.GET("/permissions", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		middlewares.HttpEtagCache(0),
+		controller.getPermissions)
+	route.GET("/permissions/:permissionId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		middlewares.HttpEtagCache(0),
+		controller.getPermission)
+	route.PUT("/permissions/:permissionId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.updatePermission)
+	route.DELETE("/permissions/:permissionId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.deletePermission)
+	route.POST("/roles", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.createRole)
+	route.GET("/roles", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		middlewares.HttpEtagCache(0),
+		controller.getRoles)
+	route.GET("/roles/:roleId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		middlewares.HttpEtagCache(0),
+		controller.getRole)
+	route.PUT("/roles/:roleId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.updateRole)
+	route.DELETE("/roles/:roleId", middlewares.PermissionChecker([]string{domain.PermissionManageAccessControl}),
+		controller.deleteRole)
 }
 
-func (AccessControlController) CreatePermission(ctx echo.Context) error {
+func (AccessControlController) createPermission(ctx *gin.Context) {
 	var permission dtos.PermissionInformation
 
-	if err := ctx.Bind(&permission); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := ctx.BindJSON(&permission); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	if err := permission.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err := services.RoleBasedAccessControlService{}.CreatePermission(ctx.Request().Context(), permission)
+	err := services.RoleBasedAccessControlService{}.CreatePermission(ctx.Request.Context(), permission)
 	if err != nil {
 		if err == domain.ErrDuplicated {
-			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			return
 		}
 
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (AccessControlController) GetPermissions(ctx echo.Context) error {
-	pageable := dtos.GetPageableFromRequest(ctx)
+func (AccessControlController) getPermissions(ctx *gin.Context) {
+	pageable := dtos.NewPageableFromRequest(ctx)
 
 	filters := map[string]interface{}{}
-	if len(ctx.QueryParam("name")) > 0 {
-		filters["name"] = ctx.QueryParam("name")
+	if len(ctx.Query("name")) > 0 {
+		filters["name"] = ctx.Query("name")
 	}
 
-	permissionEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetPermissions(ctx.Request().Context(), filters, pageable)
+	permissionEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetPermissions(ctx.Request.Context(), filters, pageable)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	var permissions = make([]dtos.PermissionInformation, 0)
@@ -88,21 +95,24 @@ func (AccessControlController) GetPermissions(ctx echo.Context) error {
 		TotalCount: totalCount,
 	}
 
-	return ctx.JSON(http.StatusOK, pageResult)
+	ctx.JSON(http.StatusOK, pageResult)
 }
 
-func (AccessControlController) GetPermission(ctx echo.Context) error {
+func (AccessControlController) getPermission(ctx *gin.Context) {
 	permissionId, err := strconv.ParseInt(ctx.Param("permissionId"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	permissionEntity, err := services.RoleBasedAccessControlService{}.GetPermission(ctx.Request().Context(), uint(permissionId))
+	permissionEntity, err := services.RoleBasedAccessControlService{}.GetPermission(ctx.Request.Context(), uint(permissionId))
 	if err != nil {
 		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusNotFound, nil)
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	permissionDetails := dtos.PermissionDetails{
@@ -114,82 +124,93 @@ func (AccessControlController) GetPermission(ctx echo.Context) error {
 		CreatedAt:   permissionEntity.CreatedAt,
 	}
 
-	return ctx.JSON(http.StatusOK, permissionDetails)
+	ctx.JSON(http.StatusOK, permissionDetails)
 }
 
-func (AccessControlController) UpdatePermission(ctx echo.Context) error {
+func (AccessControlController) updatePermission(ctx *gin.Context) {
 	permissionId, err := strconv.ParseInt(ctx.Param("permissionId"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
 	var permission dtos.PermissionInformation
-	if err := ctx.Bind(&permission); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := ctx.BindJSON(&permission); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	if err := permission.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err = services.RoleBasedAccessControlService{}.UpdatePermission(ctx.Request().Context(), uint(permissionId), permission)
+	err = services.RoleBasedAccessControlService{}.UpdatePermission(ctx.Request.Context(), uint(permissionId), permission)
 	if err != nil {
-		if err == domain.ErrNonChangeable || err == domain.ErrDuplicated {
-			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+
+		if err == domain.ErrNonChangeable || err == domain.ErrDuplicated {
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (AccessControlController) DeletePermission(ctx echo.Context) error {
+func (AccessControlController) deletePermission(ctx *gin.Context) {
 	permissionId, err := strconv.ParseInt(ctx.Param("permissionId"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	err = services.RoleBasedAccessControlService{}.DeletePermission(ctx.Request().Context(), uint(permissionId))
+	err = services.RoleBasedAccessControlService{}.DeletePermission(ctx.Request.Context(), uint(permissionId))
 	if err != nil {
-		if err == domain.ErrNonChangeable {
-			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+		if err == domain.ErrNonChangeable {
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (AccessControlController) CreateRole(ctx echo.Context) error {
+func (AccessControlController) createRole(ctx *gin.Context) {
 	var role dtos.RoleInformation
 
-	if err := ctx.Bind(&role); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := ctx.BindJSON(&role); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	if err := role.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err := services.RoleBasedAccessControlService{}.CreateRole(ctx.Request().Context(), role)
+	err := services.RoleBasedAccessControlService{}.CreateRole(ctx.Request.Context(), role)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, nil)
+	ctx.Status(http.StatusNoContent)
 }
 
-func (AccessControlController) GetRoles(ctx echo.Context) error {
-	pageable := dtos.GetPageableFromRequest(ctx)
+func (AccessControlController) getRoles(ctx *gin.Context) {
+	pageable := dtos.NewPageableFromRequest(ctx)
 
 	filters := map[string]interface{}{}
-	if len(ctx.QueryParam("name")) > 0 {
-		filters["name"] = ctx.QueryParam("name")
+	if len(ctx.Query("name")) > 0 {
+		filters["name"] = ctx.Query("name")
 	}
 
-	roleEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request().Context(), filters, pageable)
+	roleEntities, totalCount, err := services.RoleBasedAccessControlService{}.GetRoles(ctx.Request.Context(), filters, pageable)
 	if err != nil {
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	var roleSummaries = make([]dtos.RoleSummary, 0)
@@ -217,66 +238,24 @@ func (AccessControlController) GetRoles(ctx echo.Context) error {
 		TotalCount: totalCount,
 	}
 
-	return ctx.JSON(http.StatusOK, pageResult)
+	ctx.JSON(http.StatusOK, pageResult)
 }
 
-func (AccessControlController) DeleteRole(ctx echo.Context) error {
+func (AccessControlController) getRole(ctx *gin.Context) {
 	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
 	}
 
-	err = services.RoleBasedAccessControlService{}.DeleteRole(ctx.Request().Context(), uint(roleId))
-	if err != nil {
-		if err == domain.ErrNonChangeable {
-			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
-		}
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, nil)
-}
-
-func (AccessControlController) UpdateRole(ctx echo.Context) error {
-	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	var role dtos.RoleInformation
-
-	if err := ctx.Bind(&role); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := role.Validate(ctx); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	err = services.RoleBasedAccessControlService{}.UpdateRole(ctx.Request().Context(), uint(roleId), role)
-	if err != nil {
-		if err == domain.ErrNonChangeable {
-			return ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
-		}
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, nil)
-
-}
-
-func (AccessControlController) GetRole(ctx echo.Context) error {
-	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	roleEntity, err := services.RoleBasedAccessControlService{}.GetRole(ctx.Request().Context(), uint(roleId))
+	roleEntity, err := services.RoleBasedAccessControlService{}.GetRole(ctx.Request.Context(), uint(roleId))
 	if err != nil {
 		if err == domain.ErrNotFound {
-			return ctx.JSON(http.StatusNotFound, nil)
+			ctx.Status(http.StatusNotFound)
+			return
 		}
-		return err
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
 	}
 
 	var allowedPermissions = make([]dtos.AllowedPermission, 0)
@@ -297,5 +276,60 @@ func (AccessControlController) GetRole(ctx echo.Context) error {
 		AllowedPermissions: allowedPermissions,
 	}
 
-	return ctx.JSON(http.StatusOK, roleDetails)
+	ctx.JSON(http.StatusOK, roleDetails)
+}
+
+func (AccessControlController) updateRole(ctx *gin.Context) {
+	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var role dtos.RoleInformation
+
+	if err := ctx.BindJSON(&role); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = services.RoleBasedAccessControlService{}.UpdateRole(ctx.Request.Context(), uint(roleId), role)
+	if err != nil {
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if err == domain.ErrNonChangeable {
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+func (AccessControlController) deleteRole(ctx *gin.Context) {
+	roleId, err := strconv.ParseInt(ctx.Param("roleId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = services.RoleBasedAccessControlService{}.DeleteRole(ctx.Request.Context(), uint(roleId))
+	if err != nil {
+		if err == domain.ErrNotFound {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if err == domain.ErrNonChangeable {
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorMessage{Message: err.Error()})
+			return
+		}
+		helpers.ErrorHelper().InternalServerError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

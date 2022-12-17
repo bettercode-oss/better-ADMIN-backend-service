@@ -1,7 +1,6 @@
 package dtos
 
 import (
-	"github.com/labstack/echo"
 	"time"
 )
 
@@ -35,11 +34,7 @@ type MemberOrganizationRole struct {
 }
 
 type MemberAssignRole struct {
-	RoleIds []uint `json:"roleIds" validate:"required"`
-}
-
-func (r MemberAssignRole) Validate(ctx echo.Context) error {
-	return ctx.Validate(r)
+	RoleIds []uint `json:"roleIds" binding:"required"`
 }
 
 type CurrentMember struct {
@@ -58,11 +53,7 @@ type MemberAssignedAllRoleAndPermission struct {
 }
 
 type MemberSignUp struct {
-	SignId   string `json:"signId" validate:"required"`
-	Name     string `json:"name" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-func (m MemberSignUp) Validate(ctx echo.Context) error {
-	return ctx.Validate(m)
+	SignId   string `json:"signId" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }

@@ -1,29 +1,20 @@
 package dtos
 
 import (
-	"github.com/labstack/echo"
 	"time"
 )
 
 type OrganizationInformation struct {
 	Id                   uint                      `json:"id"`
-	Name                 string                    `json:"name" validate:"required"`
+	Name                 string                    `json:"name" binding:"required"`
 	ParentOrganizationId *uint                     `json:"parentOrganizationId,omitempty"`
 	SubOrganizations     []OrganizationInformation `json:"subOrganizations,omitempty"`
 	OrganizationRoles    []OrganizationRole        `json:"roles,omitempty"`
 	OrganizationMembers  []OrganizationMember      `json:"members,omitempty"`
 }
 
-func (o OrganizationInformation) Validate(ctx echo.Context) error {
-	return ctx.Validate(o)
-}
-
 type OrganizationAssignRole struct {
-	RoleIds []uint `json:"roleIds" validate:"required"`
-}
-
-func (o OrganizationAssignRole) Validate(ctx echo.Context) error {
-	return ctx.Validate(o)
+	RoleIds []uint `json:"roleIds" binding:"required"`
 }
 
 type OrganizationRole struct {
@@ -37,11 +28,7 @@ type OrganizationMember struct {
 }
 
 type OrganizationAssignMember struct {
-	MemberIds []uint `json:"memberIds" validate:"required"`
-}
-
-func (o OrganizationAssignMember) Validate(ctx echo.Context) error {
-	return ctx.Validate(o)
+	MemberIds []uint `json:"memberIds" binding:"required"`
 }
 
 type OrganizationDetails struct {

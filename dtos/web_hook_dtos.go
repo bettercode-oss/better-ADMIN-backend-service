@@ -2,19 +2,14 @@ package dtos
 
 import (
 	"fmt"
-	"github.com/labstack/echo"
 	"net/http"
 	"strings"
 )
 
 type WebHookInformation struct {
 	Id          uint   `json:"id"`
-	Name        string `json:"name" validate:"required"`
+	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-}
-
-func (w WebHookInformation) Validate(ctx echo.Context) error {
-	return ctx.Validate(w)
 }
 
 type WebHookDetails struct {
@@ -46,9 +41,5 @@ type WebHookCallSpec struct {
 
 type WebHookMessage struct {
 	Title string `json:"title"`
-	Text  string `json:"text" validate:"required"`
-}
-
-func (w WebHookMessage) Validate(ctx echo.Context) error {
-	return ctx.Validate(w)
+	Text  string `json:"text" binding:"required"`
 }

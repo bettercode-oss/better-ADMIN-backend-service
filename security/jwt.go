@@ -27,7 +27,7 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	for key, value := range claimMap {
 		accessTokenClaims[key] = value
 	}
-	// TODO config 로 빼자.
+
 	accessTokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
@@ -39,7 +39,7 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	for key, value := range claimMap {
 		refreshTokenClaims[key] = value
 	}
-	// TODO config 로 빼자.
+
 	refreshTokenExpires := time.Now().Add(time.Hour * 24 * 7)
 	refreshTokenClaims["exp"] = refreshTokenExpires.Unix()
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims).SignedString([]byte(config.Config.JwtSecret))
@@ -135,6 +135,13 @@ type JwtToken struct {
 	AccessToken         string
 	RefreshToken        string
 	RefreshTokenExpires time.Time
+}
+
+func (t JwtToken) GetRefreshTokenExpiresForCookie() time.Time {
+	// 쿠키의 Expire 시간을 Local time 설정하면 브라우저 쿠키의 Expire 에는 UTC 기준으로 설정됨(KST인 경우 -9 시간)
+	// 이를 막기 위해 timezone 의 offset 을 구하여 현재 Local time 에 offset 시간을 더해줌.
+	_, offset := t.RefreshTokenExpires.Zone()
+	return t.RefreshTokenExpires.Add(time.Duration(offset) * time.Second)
 }
 
 type UserClaim struct {

@@ -1,18 +1,45 @@
 package controllers
 
 import (
-	"better-admin-backend-service/security"
 	"better-admin-backend-service/testdata/testdb"
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestWebHookController_createWebHook_필수값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"description": "설명...."
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
 
 func TestWebHookController_CreateWebHook(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
@@ -24,40 +51,53 @@ func TestWebHookController_CreateWebHook(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 1,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(WebHookController{}.CreateWebHook, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusCreated, rec.Code)
 }
 
-func TestWebHookController_GetWebHooks(t *testing.T) {
+func TestWebHookController_getWebHooks(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks?page=1&pageSize=2", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
 
 	// when
-	handleWithFilter(WebHookController{}.GetWebHooks, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusOK, rec.Code)
-
 	fmt.Println(rec.Body.String())
-	var resp interface{}
-	json.Unmarshal(rec.Body.Bytes(), &resp)
+	var actual interface{}
+	json.Unmarshal(rec.Body.Bytes(), &actual)
 
 	expected := map[string]interface{}{
 		"totalCount": float64(3),
@@ -75,45 +115,54 @@ func TestWebHookController_GetWebHooks(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, resp.(map[string]interface{}))
+	assert.Equal(t, expected, actual.(map[string]interface{}))
 }
 
-func TestWebHookController_DeleteWebHook(t *testing.T) {
+func TestWebHookController_getWebHook_id가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	webHookId := "3"
-	req := httptest.NewRequest(http.MethodDelete, "/api/web-hooks/:id", nil)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues(webHookId)
+	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks/1000", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 1,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(WebHookController{}.DeleteWebHook, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
-	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestWebHookController_GetWebHook(t *testing.T) {
+func TestWebHookController_getWebHook(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	webHookId := "3"
-	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks/:id", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks/3", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues(webHookId)
 
 	// when
-	handleWithFilter(WebHookController{}.GetWebHook, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -137,56 +186,235 @@ func TestWebHookController_GetWebHook(t *testing.T) {
 	assert.Equal(t, expected, resp.(map[string]interface{}))
 }
 
-func TestWebHookController_UpdateWebHook(t *testing.T) {
+func TestWebHookController_deleteWebHook_id가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	webHookId := "3"
+	req := httptest.NewRequest(http.MethodDelete, "/api/web-hooks/1000", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestWebHookController_DeleteWebHook(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	req := httptest.NewRequest(http.MethodDelete, "/api/web-hooks/3", nil)
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestWebHookController_updateWebHook_필수값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+		"description": "변경된 설명...."
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/1000", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestWebHookController_updateWebHook_id가_없는_경우(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
 	requestBody := `{
 		"name": "테스트 웹훅45444",
 		"description": "변경된 설명...."
 	}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/:id", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues(webHookId)
+	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/1000", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
 
-	userClaim := security.UserClaim{
-		Id: 1,
+	if err != nil {
+		t.Failed()
 	}
-	ctx.SetRequest(ctx.Request().WithContext(context.WithValue(ctx.Request().Context(), "userClaim", &userClaim)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
 
 	// when
-	handleWithFilter(WebHookController{}.UpdateWebHook, ctx)
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestWebHookController_updateWebHook(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	requestBody := `{
+		"name": "테스트 웹훅45444",
+		"description": "변경된 설명...."
+	}`
+
+	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/3", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"MANAGE_SYSTEM_SETTINGS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	fmt.Println(rec.Body.String())
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestWebHookController_NoteMessage(t *testing.T) {
+func TestWebHookController_noteMessage_필수값_확인(t *testing.T) {
+	// given
+	requestBody := `{
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/3/note", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"NOTE_WEB_HOOKS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestWebHookController_noteMessage_id_가_없는_경우(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
-	webHookId := "3"
 	requestBody := `{
 		"text": "테스트 메시지..."
 	}`
 
-	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/:id/note", strings.NewReader(requestBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/1000/note", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"NOTE_WEB_HOOKS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	ctx := echoApp.NewContext(req, rec)
-	ctx.SetParamNames("id")
-	ctx.SetParamValues(webHookId)
 
 	// when
-	handleWithFilter(WebHookController{}.NoteMessage, ctx)
+	ginApp.ServeHTTP(rec, req)
 
 	// then
 	fmt.Println(rec.Body.String())
-	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestWebHookController_noteMessage(t *testing.T) {
+	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
+
+	// given
+	requestBody := `{
+		"text": "테스트 메시지..."
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/3/note", strings.NewReader(requestBody))
+	token, err := generateTestJWT(map[string]interface{}{
+		"Id": 1,
+		"Permissions": []string{
+			"NOTE_WEB_HOOKS",
+		},
+	}, time.Minute*15)
+
+	if err != nil {
+		t.Failed()
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	// when
+	ginApp.ServeHTTP(rec, req)
+
+	// then
+	fmt.Println(rec.Body.String())
+	assert.Equal(t, http.StatusCreated, rec.Code)
 }

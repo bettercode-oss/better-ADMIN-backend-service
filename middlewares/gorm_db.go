@@ -2,57 +2,51 @@ package middlewares
 
 import (
 	"better-admin-backend-service/helpers"
-	"github.com/labstack/echo"
-	log "github.com/sirupsen/logrus"
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"net/http"
 )
 
-func GORMDb(db *gorm.DB) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			req := c.Request()
-			ctx := req.Context()
+func GORMDb(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		req := c.Request
+		ctx := req.Context()
 
-			switch req.Method {
-			case "POST", "PUT", "DELETE", "PATCH":
-				tx := db.Begin()
-				defer func() {
-					if r := recover(); r != nil {
-						tx.Rollback()
-					}
-				}()
+		switch req.Method {
+		case "POST", "PUT", "DELETE", "PATCH":
+			tx := db.Begin()
+			defer func() {
+				if r := recover(); r != nil {
+					tx.Rollback()
+					panic(r) // 상위 middleware(Recover) 에서 Panic 을 처리하도록 함.
+				}
+			}()
 
-				if err := tx.Error; err != nil {
-					return err
-				}
+			if err := tx.Error; err != nil {
+				c.Error(errors.Wrap(err, "DB Tx Begin error"))
+				c.Abort()
+				return
+			}
+			c.Request = c.Request.WithContext(helpers.ContextHelper().SetDB(ctx, tx))
 
-				ctx = helpers.ContextHelper().SetDB(ctx, tx)
-				c.SetRequest(req.WithContext(ctx))
+			c.Next()
 
-				if err := next(c); err != nil {
-					if err := tx.Rollback().Error; err != nil {
-						log.Error("database rollback error", err.Error())
-					}
-					return err
+			if len(c.Errors) > 0 {
+				if err := tx.Rollback().Error; err != nil {
+					c.Error(errors.Wrap(err, "database rollback error"))
 				}
-				if c.Response().Status >= 500 {
-					if err := tx.Rollback().Error; err != nil {
-						log.Error("database rollback error", err.Error())
-					}
-					return nil
-				}
-				if err := tx.Commit().Error; err != nil {
-					log.Error("database commit error", err.Error())
-					return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-				}
-			default:
-				ctx = helpers.ContextHelper().SetDB(ctx, db)
-				c.SetRequest(req.WithContext(ctx))
-				return next(c)
+				c.Abort()
+				return
 			}
 
-			return nil
+			if err := tx.Commit().Error; err != nil {
+				c.Error(errors.Wrap(err, "database rollback error"))
+				c.Abort()
+				return
+			}
+		default:
+			c.Request = c.Request.WithContext(helpers.ContextHelper().SetDB(ctx, db))
+			c.Next()
 		}
 	}
 }
