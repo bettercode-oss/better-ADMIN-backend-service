@@ -1,4 +1,4 @@
-FROM golang:1.15 AS builder
+FROM golang:1.18 AS builder
 WORKDIR /go/src/better-admin-backend-service
 COPY . .
 RUN go mod download
