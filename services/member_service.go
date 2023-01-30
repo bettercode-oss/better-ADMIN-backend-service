@@ -1,40 +1,49 @@
 package services
 
 import (
-	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/member/entity"
-	"better-admin-backend-service/domain/member/repository"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
+	"better-admin-backend-service/member/domain"
+	"better-admin-backend-service/member/repository"
 	"context"
 )
 
 type MemberService struct {
+	rbacService      *RoleBasedAccessControlService
+	memberRepository *repository.MemberRepository
 }
 
-func (MemberService) GetMemberBySignId(ctx context.Context, signId string) (entity.MemberEntity, error) {
-	return repository.MemberRepository{}.FindBySignId(ctx, signId)
+func NewMemberService(rbacService *RoleBasedAccessControlService,
+	memberRepository *repository.MemberRepository) *MemberService {
+	return &MemberService{
+		rbacService:      rbacService,
+		memberRepository: memberRepository,
+	}
 }
 
-func (MemberService) GetMemberByDoorayId(ctx context.Context, doorayId string) (entity.MemberEntity, error) {
-	return repository.MemberRepository{}.FindByDoorayId(ctx, doorayId)
+func (s MemberService) GetMemberBySignId(ctx context.Context, signId string) (domain.MemberEntity, error) {
+	return s.memberRepository.FindBySignId(ctx, signId)
 }
 
-func (MemberService) CreateMember(ctx context.Context, entity *entity.MemberEntity) error {
-	return repository.MemberRepository{}.Create(ctx, entity)
+func (s MemberService) GetMemberByDoorayId(ctx context.Context, doorayId string) (domain.MemberEntity, error) {
+	return s.memberRepository.FindByDoorayId(ctx, doorayId)
 }
 
-func (MemberService) GetMemberById(ctx context.Context, id uint) (entity.MemberEntity, error) {
-	return repository.MemberRepository{}.FindById(ctx, id)
+func (s MemberService) CreateMember(ctx context.Context, entity *domain.MemberEntity) error {
+	return s.memberRepository.Create(ctx, entity)
 }
 
-func (MemberService) GetMembers(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.MemberEntity, int64, error) {
-	return repository.MemberRepository{}.FindAll(ctx, filters, pageable)
+func (s MemberService) GetMemberById(ctx context.Context, id uint) (domain.MemberEntity, error) {
+	return s.memberRepository.FindById(ctx, id)
 }
 
-func (MemberService) AssignRole(ctx context.Context, memberId uint, assignRole dtos.MemberAssignRole) error {
-	repository := repository.MemberRepository{}
-	memberEntity, err := repository.FindById(ctx, memberId)
+func (s MemberService) GetMembers(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]domain.MemberEntity, int64, error) {
+	return s.memberRepository.FindAll(ctx, filters, pageable)
+}
+
+func (s MemberService) AssignRole(ctx context.Context, memberId uint, assignRole dtos.MemberAssignRole) error {
+	memberEntity, err := s.memberRepository.FindById(ctx, memberId)
 	if err != nil {
 		return err
 	}
@@ -42,7 +51,7 @@ func (MemberService) AssignRole(ctx context.Context, memberId uint, assignRole d
 	filters := map[string]interface{}{}
 	filters["roleIds"] = assignRole.RoleIds
 
-	findRoleEntities, _, err := RoleBasedAccessControlService{}.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
+	findRoleEntities, _, err := s.rbacService.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
 	if err != nil {
 		return err
 	}
@@ -52,36 +61,34 @@ func (MemberService) AssignRole(ctx context.Context, memberId uint, assignRole d
 		return err
 	}
 
-	return repository.Save(ctx, &memberEntity)
+	return s.memberRepository.Save(ctx, &memberEntity)
 }
 
-func (MemberService) GetMember(ctx context.Context, memberId uint) (entity.MemberEntity, error) {
-	return repository.MemberRepository{}.FindById(ctx, memberId)
+func (s MemberService) GetMember(ctx context.Context, memberId uint) (domain.MemberEntity, error) {
+	return s.memberRepository.FindById(ctx, memberId)
 }
 
-func (MemberService) SignUpMember(ctx context.Context, signUp dtos.MemberSignUp) error {
-	repository := repository.MemberRepository{}
-	_, err := repository.FindBySignId(ctx, signUp.SignId)
+func (s MemberService) SignUpMember(ctx context.Context, signUp dtos.MemberSignUp) error {
+	_, err := s.memberRepository.FindBySignId(ctx, signUp.SignId)
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if err == errors.ErrNotFound {
 			// signId 가 중복이 없을 때만 가입
-			newMember, err := entity.NewMemberEntityFromSignUp(signUp)
+			newMember, err := domain.NewMemberEntityFromSignUp(signUp)
 			if err != nil {
 				return err
 			}
 
-			return repository.Create(ctx, &newMember)
+			return s.memberRepository.Create(ctx, &newMember)
 		}
 
 		return err
 	}
 
-	return domain.ErrDuplicated
+	return errors.ErrDuplicated
 }
 
-func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
-	repository := repository.MemberRepository{}
-	memberEntity, err := repository.FindById(ctx, memberId)
+func (s MemberService) ApproveMember(ctx context.Context, memberId uint) error {
+	memberEntity, err := s.memberRepository.FindById(ctx, memberId)
 	if err != nil {
 		return err
 	}
@@ -90,37 +97,35 @@ func (MemberService) ApproveMember(ctx context.Context, memberId uint) error {
 		return err
 	}
 
-	return repository.Save(ctx, &memberEntity)
+	return s.memberRepository.Save(ctx, &memberEntity)
 }
 
-func (MemberService) GetMemberByGoogleId(ctx context.Context, googleId string) (entity.MemberEntity, error) {
-	return repository.MemberRepository{}.FindByGoogleId(ctx, googleId)
+func (s MemberService) GetMemberByGoogleId(ctx context.Context, googleId string) (domain.MemberEntity, error) {
+	return s.memberRepository.FindByGoogleId(ctx, googleId)
 }
 
-func (MemberService) RejectMember(ctx context.Context, memberId uint) error {
+func (s MemberService) RejectMember(ctx context.Context, memberId uint) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
-	repository := repository.MemberRepository{}
-	memberEntity, err := repository.FindById(ctx, memberId)
+	memberEntity, err := s.memberRepository.FindById(ctx, memberId)
 	if err != nil {
 		return err
 	}
 
 	memberEntity.UpdatedBy = userClaim.Id
-	return repository.Delete(ctx, memberEntity)
+	return s.memberRepository.Delete(ctx, memberEntity)
 }
 
-func (MemberService) UpdateMemberLastAccessAt(ctx context.Context, memberId uint) error {
-	repository := repository.MemberRepository{}
-	memberEntity, err := repository.FindById(ctx, memberId)
+func (s MemberService) UpdateMemberLastAccessAt(ctx context.Context, memberId uint) error {
+	memberEntity, err := s.memberRepository.FindById(ctx, memberId)
 	if err != nil {
 		return err
 	}
 
 	memberEntity.UpdateLastAccessAt()
 
-	return repository.Save(ctx, &memberEntity)
+	return s.memberRepository.Save(ctx, &memberEntity)
 }

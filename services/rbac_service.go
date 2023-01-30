@@ -1,63 +1,74 @@
 package services
 
 import (
-	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/rbac/entity"
-	"better-admin-backend-service/domain/rbac/repository"
 	"better-admin-backend-service/dtos"
-	"better-admin-backend-service/factory"
+	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
+	"better-admin-backend-service/rbac/domain"
+	"better-admin-backend-service/rbac/factory"
+	"better-admin-backend-service/rbac/repository"
 	"context"
 )
 
 type RoleBasedAccessControlService struct {
+	permissionRepository *repository.PermissionRepository
+	roleRepository       *repository.RoleRepository
 }
 
-func (RoleBasedAccessControlService) CreatePermission(ctx context.Context, permissionInformation dtos.PermissionInformation) error {
-	permissionEntity, err := entity.NewPermissionEntity(ctx, permissionInformation)
+func NewRoleBasedAccessControlService(
+	permissionRepository *repository.PermissionRepository,
+	roleRepository *repository.RoleRepository) *RoleBasedAccessControlService {
+
+	return &RoleBasedAccessControlService{
+		permissionRepository: permissionRepository,
+		roleRepository:       roleRepository,
+	}
+}
+
+func (s RoleBasedAccessControlService) CreatePermission(ctx context.Context, permissionInformation dtos.PermissionInformation) error {
+	permissionEntity, err := domain.NewPermissionEntity(ctx, permissionInformation)
 	if err != nil {
 		return err
 	}
-	return repository.PermissionRepository{}.Create(ctx, &permissionEntity)
+	return s.permissionRepository.Create(ctx, &permissionEntity)
 }
 
-func (RoleBasedAccessControlService) GetPermissions(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.PermissionEntity, int64, error) {
-	return repository.PermissionRepository{}.FindAll(ctx, filters, pageable)
+func (s RoleBasedAccessControlService) GetPermissions(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]domain.PermissionEntity, int64, error) {
+	return s.permissionRepository.FindAll(ctx, filters, pageable)
 }
 
-func (RoleBasedAccessControlService) GetPermission(ctx context.Context, permissionId uint) (entity.PermissionEntity, error) {
-	return repository.PermissionRepository{}.FindById(ctx, permissionId)
+func (s RoleBasedAccessControlService) GetPermission(ctx context.Context, permissionId uint) (domain.PermissionEntity, error) {
+	return s.permissionRepository.FindById(ctx, permissionId)
 }
 
-func (RoleBasedAccessControlService) CreateRole(ctx context.Context, roleInformation dtos.RoleInformation) error {
-	roleEntity, err := factory.NewRoleEntity(ctx, roleInformation)
+func (s RoleBasedAccessControlService) CreateRole(ctx context.Context, roleInformation dtos.RoleInformation) error {
+	roleEntity, err := factory.NewRoleEntity(ctx, roleInformation, s.permissionRepository)
 	if err != nil {
 		return err
 	}
 
-	return repository.RoleRepository{}.Create(ctx, &roleEntity)
+	return s.roleRepository.Create(ctx, &roleEntity)
 }
 
-func (RoleBasedAccessControlService) GetRoles(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]entity.RoleEntity, int64, error) {
-	return repository.RoleRepository{}.FindAll(ctx, filters, pageable)
+func (s RoleBasedAccessControlService) GetRoles(ctx context.Context, filters map[string]interface{}, pageable dtos.Pageable) ([]domain.RoleEntity, int64, error) {
+	return s.roleRepository.FindAll(ctx, filters, pageable)
 }
 
-func (RoleBasedAccessControlService) UpdatePermission(ctx context.Context, permissionId uint, permissionInformation dtos.PermissionInformation) error {
-	repository := repository.PermissionRepository{}
-	permissionEntity, err := repository.FindById(ctx, permissionId)
+func (s RoleBasedAccessControlService) UpdatePermission(ctx context.Context, permissionId uint, permissionInformation dtos.PermissionInformation) error {
+	permissionEntity, err := s.permissionRepository.FindById(ctx, permissionId)
 	if err != nil {
 		return err
 	}
 
 	if permissionEntity.Name != permissionInformation.Name {
 		// 변경하려는 이름이 이미 존재하는지 여부 확인
-		exists, err := repository.ExistsByName(ctx, permissionInformation.Name)
+		exists, err := s.permissionRepository.ExistsByName(ctx, permissionInformation.Name)
 		if err != nil {
 			return err
 		}
 
 		if exists == true {
-			return domain.ErrDuplicated
+			return errors.ErrDuplicated
 		}
 	}
 
@@ -65,18 +76,16 @@ func (RoleBasedAccessControlService) UpdatePermission(ctx context.Context, permi
 		return err
 	}
 
-	return repository.Save(ctx, permissionEntity)
+	return s.permissionRepository.Save(ctx, permissionEntity)
 }
 
-func (RoleBasedAccessControlService) DeletePermission(ctx context.Context, permissionId uint) error {
+func (s RoleBasedAccessControlService) DeletePermission(ctx context.Context, permissionId uint) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
-	repository := repository.PermissionRepository{}
-
-	permissionEntity, err := repository.FindById(ctx, permissionId)
+	permissionEntity, err := s.permissionRepository.FindById(ctx, permissionId)
 	if err != nil {
 		return err
 	}
@@ -87,18 +96,16 @@ func (RoleBasedAccessControlService) DeletePermission(ctx context.Context, permi
 
 	permissionEntity.UpdatedBy = userClaim.Id
 
-	return repository.Delete(ctx, permissionEntity)
+	return s.permissionRepository.Delete(ctx, permissionEntity)
 }
 
-func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint) error {
+func (s RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
-	repository := repository.RoleRepository{}
-
-	roleEntity, err := repository.FindById(ctx, roleId)
+	roleEntity, err := s.roleRepository.FindById(ctx, roleId)
 	if err != nil {
 		return err
 	}
@@ -109,19 +116,18 @@ func (RoleBasedAccessControlService) DeleteRole(ctx context.Context, roleId uint
 
 	roleEntity.UpdatedBy = userClaim.Id
 
-	return repository.Delete(ctx, roleEntity)
+	return s.roleRepository.Delete(ctx, roleEntity)
 }
 
-func (RoleBasedAccessControlService) UpdateRole(ctx context.Context, roleId uint, roleInformation dtos.RoleInformation) error {
-	roleRepository := repository.RoleRepository{}
-	roleEntity, err := roleRepository.FindById(ctx, roleId)
+func (s RoleBasedAccessControlService) UpdateRole(ctx context.Context, roleId uint, roleInformation dtos.RoleInformation) error {
+	roleEntity, err := s.roleRepository.FindById(ctx, roleId)
 	if err != nil {
 		return err
 	}
 
 	filters := map[string]interface{}{}
 	filters["permissionIds"] = roleInformation.AllowedPermissionIds
-	allowedPermissionEntities, _, err := repository.PermissionRepository{}.FindAll(ctx, filters, dtos.Pageable{Page: 0})
+	allowedPermissionEntities, _, err := s.permissionRepository.FindAll(ctx, filters, dtos.Pageable{Page: 0})
 	if err != nil {
 		return err
 	}
@@ -130,9 +136,9 @@ func (RoleBasedAccessControlService) UpdateRole(ctx context.Context, roleId uint
 		return err
 	}
 
-	return roleRepository.Save(ctx, &roleEntity)
+	return s.roleRepository.Save(ctx, &roleEntity)
 }
 
-func (RoleBasedAccessControlService) GetRole(ctx context.Context, roleId uint) (entity.RoleEntity, error) {
-	return repository.RoleRepository{}.FindById(ctx, roleId)
+func (s RoleBasedAccessControlService) GetRole(ctx context.Context, roleId uint) (domain.RoleEntity, error) {
+	return s.roleRepository.FindById(ctx, roleId)
 }
