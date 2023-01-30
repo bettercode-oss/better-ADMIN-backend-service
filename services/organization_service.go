@@ -1,29 +1,43 @@
 package services
 
 import (
-	memberEntity "better-admin-backend-service/domain/member/entity"
-	"better-admin-backend-service/domain/organization/entity"
-	"better-admin-backend-service/domain/organization/repository"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/helpers"
+	memberDomain "better-admin-backend-service/member/domain"
+	"better-admin-backend-service/organization/domain"
+	"better-admin-backend-service/organization/repository"
 	"context"
 	"github.com/wesovilabs/koazee"
 	"strings"
 )
 
 type OrganizationService struct {
+	rbacService            *RoleBasedAccessControlService
+	organizationRepository *repository.OrganizationRepository
+	memberService          *MemberService
 }
 
-func (OrganizationService) CreateOrganization(ctx context.Context, information dtos.OrganizationInformation) error {
-	organizationEntity, err := entity.NewOrganizationEntity(ctx, information)
+func NewOrganizationService(
+	rbacService *RoleBasedAccessControlService,
+	organizationRepository *repository.OrganizationRepository,
+	memberService *MemberService) *OrganizationService {
+	return &OrganizationService{
+		rbacService:            rbacService,
+		organizationRepository: organizationRepository,
+		memberService:          memberService,
+	}
+}
+
+func (s OrganizationService) CreateOrganization(ctx context.Context, information dtos.OrganizationInformation) error {
+	organizationEntity, err := domain.NewOrganizationEntity(ctx, information)
 	if err != nil {
 		return err
 	}
-	return repository.OrganizationRepository{}.Create(ctx, organizationEntity)
+	return s.organizationRepository.Create(ctx, organizationEntity)
 }
 
-func (OrganizationService) GetAllOrganizations(ctx context.Context, filters map[string]interface{}) ([]entity.OrganizationEntity, error) {
-	entities, err := repository.OrganizationRepository{}.FindAll(ctx, filters)
+func (s OrganizationService) GetAllOrganizations(ctx context.Context, filters map[string]interface{}) ([]domain.OrganizationEntity, error) {
+	entities, err := s.organizationRepository.FindAll(ctx, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -32,16 +46,15 @@ func (OrganizationService) GetAllOrganizations(ctx context.Context, filters map[
 		entities[i].GeneratePath(entities)
 	}
 
-	entitiesSortedByPath := koazee.StreamOf(entities).Sort(func(a, b entity.OrganizationEntity) int {
+	entitiesSortedByPath := koazee.StreamOf(entities).Sort(func(a, b domain.OrganizationEntity) int {
 		return strings.Compare(a.Path, b.Path)
-	}).Out().Val().([]entity.OrganizationEntity)
+	}).Out().Val().([]domain.OrganizationEntity)
 
 	return entitiesSortedByPath, nil
 }
 
-func (OrganizationService) ChangePosition(ctx context.Context, organizationId uint, parentOrganizationId *uint) error {
-	repository := repository.OrganizationRepository{}
-	organizationEntity, err := repository.FindById(ctx, organizationId)
+func (s OrganizationService) ChangePosition(ctx context.Context, organizationId uint, parentOrganizationId *uint) error {
+	organizationEntity, err := s.organizationRepository.FindById(ctx, organizationId)
 	if err != nil {
 		return err
 	}
@@ -51,22 +64,21 @@ func (OrganizationService) ChangePosition(ctx context.Context, organizationId ui
 		return err
 	}
 
-	return repository.Save(ctx, &organizationEntity)
+	return s.organizationRepository.Save(ctx, &organizationEntity)
 }
 
-func (OrganizationService) DeleteOrganization(ctx context.Context, organizationId uint) error {
+func (s OrganizationService) DeleteOrganization(ctx context.Context, organizationId uint) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
-	repository := repository.OrganizationRepository{}
-	organizationEntity, err := repository.FindById(ctx, organizationId)
+	organizationEntity, err := s.organizationRepository.FindById(ctx, organizationId)
 	if err != nil {
 		return err
 	}
 
-	entities, err := repository.FindAll(ctx, nil)
+	entities, err := s.organizationRepository.FindAll(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -78,18 +90,17 @@ func (OrganizationService) DeleteOrganization(ctx context.Context, organizationI
 
 	for _, childEntity := range childEntities {
 		childEntity.UpdatedBy = userClaim.Id
-		if err := repository.Delete(ctx, childEntity); err != nil {
+		if err := s.organizationRepository.Delete(ctx, childEntity); err != nil {
 			return err
 		}
 	}
 
 	organizationEntity.UpdatedBy = userClaim.Id
-	return repository.Delete(ctx, organizationEntity)
+	return s.organizationRepository.Delete(ctx, organizationEntity)
 }
 
-func (OrganizationService) AssignRoles(ctx context.Context, organizationId uint, assignRole dtos.OrganizationAssignRole) error {
-	repository := repository.OrganizationRepository{}
-	organizationEntity, err := repository.FindById(ctx, organizationId)
+func (s OrganizationService) AssignRoles(ctx context.Context, organizationId uint, assignRole dtos.OrganizationAssignRole) error {
+	organizationEntity, err := s.organizationRepository.FindById(ctx, organizationId)
 	if err != nil {
 		return err
 	}
@@ -97,7 +108,7 @@ func (OrganizationService) AssignRoles(ctx context.Context, organizationId uint,
 	filters := map[string]interface{}{}
 	filters["roleIds"] = assignRole.RoleIds
 
-	findRoleEntities, _, err := RoleBasedAccessControlService{}.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
+	findRoleEntities, _, err := s.rbacService.GetRoles(ctx, filters, dtos.Pageable{Page: 0})
 	if err != nil {
 		return err
 	}
@@ -107,12 +118,11 @@ func (OrganizationService) AssignRoles(ctx context.Context, organizationId uint,
 		return err
 	}
 
-	return repository.Save(ctx, &organizationEntity)
+	return s.organizationRepository.Save(ctx, &organizationEntity)
 }
 
-func (OrganizationService) AssignMembers(ctx context.Context, organizationId uint, assignMember dtos.OrganizationAssignMember) error {
-	repository := repository.OrganizationRepository{}
-	organizationEntity, err := repository.FindById(ctx, organizationId)
+func (s OrganizationService) AssignMembers(ctx context.Context, organizationId uint, assignMember dtos.OrganizationAssignMember) error {
+	organizationEntity, err := s.organizationRepository.FindById(ctx, organizationId)
 	if err != nil {
 		return err
 	}
@@ -120,7 +130,7 @@ func (OrganizationService) AssignMembers(ctx context.Context, organizationId uin
 	filters := map[string]interface{}{}
 	filters["memberIds"] = assignMember.MemberIds
 
-	findMemberEntities, _, err := MemberService{}.GetMembers(ctx, filters, dtos.Pageable{Page: 0})
+	findMemberEntities, _, err := s.memberService.GetMembers(ctx, filters, dtos.Pageable{Page: 0})
 	if err != nil {
 		return err
 	}
@@ -130,12 +140,11 @@ func (OrganizationService) AssignMembers(ctx context.Context, organizationId uin
 		return err
 	}
 
-	return repository.Save(ctx, &organizationEntity)
+	return s.organizationRepository.Save(ctx, &organizationEntity)
 }
 
-func (OrganizationService) ChangeOrganizationName(ctx context.Context, organizationId uint, organizationName string) error {
-	repository := repository.OrganizationRepository{}
-	organizationEntity, err := repository.FindById(ctx, organizationId)
+func (s OrganizationService) ChangeOrganizationName(ctx context.Context, organizationId uint, organizationName string) error {
+	organizationEntity, err := s.organizationRepository.FindById(ctx, organizationId)
 	if err != nil {
 		return err
 	}
@@ -145,15 +154,15 @@ func (OrganizationService) ChangeOrganizationName(ctx context.Context, organizat
 		return err
 	}
 
-	return repository.Save(ctx, &organizationEntity)
+	return s.organizationRepository.Save(ctx, &organizationEntity)
 }
 
-func (service OrganizationService) GetMemberAssignedAllRoleAndPermission(ctx context.Context, member memberEntity.MemberEntity) (dtos.MemberAssignedAllRoleAndPermission, error) {
+func (s OrganizationService) GetMemberAssignedAllRoleAndPermission(ctx context.Context, member memberDomain.MemberEntity) (dtos.MemberAssignedAllRoleAndPermission, error) {
 	memberAssignedAllRoleAndPermission := dtos.MemberAssignedAllRoleAndPermission{}
 
 	filters := map[string]interface{}{}
 	filters["memberId"] = member.ID
-	organizationsOfMember, err := service.GetAllOrganizations(ctx, filters)
+	organizationsOfMember, err := s.GetAllOrganizations(ctx, filters)
 	if err != nil {
 		return memberAssignedAllRoleAndPermission, nil
 	}
@@ -200,6 +209,6 @@ func (service OrganizationService) GetMemberAssignedAllRoleAndPermission(ctx con
 	return memberAssignedAllRoleAndPermission, nil
 }
 
-func (OrganizationService) GetOrganization(ctx context.Context, organizationId uint) (entity.OrganizationEntity, error) {
-	return repository.OrganizationRepository{}.FindById(ctx, organizationId)
+func (s OrganizationService) GetOrganization(ctx context.Context, organizationId uint) (domain.OrganizationEntity, error) {
+	return s.organizationRepository.FindById(ctx, organizationId)
 }

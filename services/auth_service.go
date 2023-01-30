@@ -2,40 +2,55 @@ package services
 
 import (
 	"better-admin-backend-service/adapters"
-	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/member/entity"
-	siteEntity "better-admin-backend-service/domain/site/entity"
+	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/errors"
+	memberDomain "better-admin-backend-service/member/domain"
 	"better-admin-backend-service/security"
 	"context"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 type AuthService struct {
+	memberService       *MemberService
+	organizationService *OrganizationService
+	siteService         *SiteService
 }
 
-func (service AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
-	memberEntity, err := MemberService{}.GetMemberBySignId(ctx, signIn.Id)
+func NewAuthService(
+	memberService *MemberService,
+	organizationService *OrganizationService,
+	siteService *SiteService) *AuthService {
+
+	return &AuthService{
+		memberService:       memberService,
+		organizationService: organizationService,
+		siteService:         siteService,
+	}
+}
+
+func (s AuthService) AuthWithSignIdPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
+	memberEntity, err := s.memberService.GetMemberBySignId(ctx, signIn.Id)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
 
 	err = memberEntity.ValidatePassword(signIn.Password)
 	if err != nil {
-		return security.JwtToken{}, domain.ErrAuthentication
+		return security.JwtToken{}, errors.ErrAuthentication
 	}
 
 	approved := memberEntity.IsApproved()
 	if approved == false {
-		return security.JwtToken{}, domain.ErrUnApproved
+		return security.JwtToken{}, errors.ErrUnApproved
 	}
 
-	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
+	return s.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }
 
-func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Context, memberEntity entity.MemberEntity) (token security.JwtToken, err error) {
-	memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, memberEntity)
+func (s AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Context, memberEntity memberDomain.MemberEntity) (token security.JwtToken, err error) {
+	memberAssignedAllRoleAndPermission, err := s.organizationService.GetMemberAssignedAllRoleAndPermission(ctx, memberEntity)
 	if err != nil {
 		return
 	}
@@ -46,12 +61,12 @@ func (service AuthService) generateJwtTokenAndLogMemberAccess(ctx context.Contex
 		Permissions: memberAssignedAllRoleAndPermission.Permissions,
 	})
 
-	err = service.logMemberAccessAt(ctx, memberEntity.ID)
+	err = s.logMemberAccessAt(ctx, memberEntity.ID)
 	return
 }
 
-func (service AuthService) logMemberAccessAt(ctx context.Context, memberId uint) error {
-	err := MemberService{}.UpdateMemberLastAccessAt(ctx, memberId)
+func (s AuthService) logMemberAccessAt(ctx context.Context, memberId uint) error {
+	err := s.memberService.UpdateMemberLastAccessAt(ctx, memberId)
 	if err != nil {
 		return err
 	}
@@ -59,8 +74,8 @@ func (service AuthService) logMemberAccessAt(ctx context.Context, memberId uint)
 	return nil
 }
 
-func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
-	doorayLoginSetting, err := SiteService{}.GetSettingWithKey(ctx, siteEntity.SettingKeyDoorayLogin)
+func (s AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, signIn dtos.MemberSignIn) (security.JwtToken, error) {
+	doorayLoginSetting, err := s.siteService.GetSettingWithKey(ctx, constants.SettingKeyDoorayLogin)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
@@ -71,7 +86,7 @@ func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, sign
 	}
 
 	if *settings.Used == false {
-		err = errors.New("not supported dooray login")
+		err = pkgerrors.New("not supported dooray login")
 		return security.JwtToken{}, err
 	}
 
@@ -80,17 +95,16 @@ func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, sign
 		return security.JwtToken{}, err
 	}
 
-	memberService := MemberService{}
-	memberEntity, err := memberService.GetMemberByDoorayId(ctx, doorayMember.Id)
+	memberEntity, err := s.memberService.GetMemberByDoorayId(ctx, doorayMember.Id)
 	if err != nil {
-		if err == domain.ErrNotFound {
-			newMemberEntity := entity.NewMemberEntityFromDoorayMember(doorayMember)
+		if err == errors.ErrNotFound {
+			newMemberEntity := memberDomain.NewMemberEntityFromDoorayMember(doorayMember)
 
-			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
+			if err = s.memberService.CreateMember(ctx, &newMemberEntity); err != nil {
 				return security.JwtToken{}, err
 			}
 
-			memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
+			memberAssignedAllRoleAndPermission, err := s.organizationService.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
 			if err != nil {
 				return security.JwtToken{}, err
 			}
@@ -104,11 +118,11 @@ func (service AuthService) AuthWithDoorayIdAndPassword(ctx context.Context, sign
 		return security.JwtToken{}, err
 	}
 
-	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
+	return s.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }
 
-func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
-	googleWorkspaceLoginSetting, err := SiteService{}.GetSettingWithKey(ctx, siteEntity.SettingKeyGoogleWorkspaceLogin)
+func (s AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, code string) (security.JwtToken, error) {
+	googleWorkspaceLoginSetting, err := s.siteService.GetSettingWithKey(ctx, constants.SettingKeyGoogleWorkspaceLogin)
 	if err != nil {
 		return security.JwtToken{}, err
 	}
@@ -119,7 +133,7 @@ func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, c
 	}
 
 	if *settings.Used == false {
-		err = errors.New("not supported google workspace login")
+		err = pkgerrors.New("not supported google workspace login")
 		return security.JwtToken{}, err
 	}
 
@@ -130,22 +144,21 @@ func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, c
 	}
 
 	if googleMember.Hd != settings.Domain {
-		return security.JwtToken{}, &domain.ErrInvalidGoogleWorkspaceAccount{
+		return security.JwtToken{}, &errors.ErrInvalidGoogleWorkspaceAccount{
 			Domain: settings.Domain,
 		}
 	}
 
-	memberService := MemberService{}
-	memberEntity, err := memberService.GetMemberByGoogleId(ctx, googleMember.Id)
+	memberEntity, err := s.memberService.GetMemberByGoogleId(ctx, googleMember.Id)
 	if err != nil {
-		if err == domain.ErrNotFound {
-			newMemberEntity := entity.NewMemberEntityFromGoogleMember(googleMember)
+		if err == errors.ErrNotFound {
+			newMemberEntity := memberDomain.NewMemberEntityFromGoogleMember(googleMember)
 
-			if err = memberService.CreateMember(ctx, &newMemberEntity); err != nil {
+			if err = s.memberService.CreateMember(ctx, &newMemberEntity); err != nil {
 				return security.JwtToken{}, err
 			}
 
-			memberAssignedAllRoleAndPermission, err := OrganizationService{}.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
+			memberAssignedAllRoleAndPermission, err := s.organizationService.GetMemberAssignedAllRoleAndPermission(ctx, newMemberEntity)
 			if err != nil {
 				return security.JwtToken{}, err
 			}
@@ -159,5 +172,5 @@ func (service AuthService) AuthWithGoogleWorkspaceAccount(ctx context.Context, c
 		return security.JwtToken{}, err
 	}
 
-	return service.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
+	return s.generateJwtTokenAndLogMemberAccess(ctx, memberEntity)
 }

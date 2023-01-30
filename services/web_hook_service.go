@@ -1,23 +1,29 @@
 package services
 
 import (
-	"better-admin-backend-service/domain"
-	"better-admin-backend-service/domain/webhook/entity"
-	"better-admin-backend-service/domain/webhook/repository"
 	"better-admin-backend-service/dtos"
+	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
+	"better-admin-backend-service/webhook/domain"
+	"better-admin-backend-service/webhook/repository"
 	"context"
 )
 
 type WebHookService struct {
+	webHookRepository *repository.WebHookRepository
 }
 
-func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos.WebHookInformation) error {
-	repository := repository.WebHookRepository{}
-	lastEntity, err := repository.FindLast(ctx)
+func NewWebHookService(webHookRepository *repository.WebHookRepository) *WebHookService {
+	return &WebHookService{
+		webHookRepository: webHookRepository,
+	}
+}
+
+func (s WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos.WebHookInformation) error {
+	lastEntity, err := s.webHookRepository.FindLast(ctx)
 	var nextId uint
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if err == errors.ErrNotFound {
 			nextId = 1
 		} else {
 			return err
@@ -26,43 +32,39 @@ func (WebHookService) CreateWebHook(ctx context.Context, webHookInformation dtos
 		nextId = lastEntity.NextId()
 	}
 
-	entity, err := entity.NewWebHookEntity(ctx, nextId, webHookInformation)
+	entity, err := domain.NewWebHookEntity(ctx, nextId, webHookInformation)
 	if err != nil {
 		return err
 	}
 
-	return repository.Create(ctx, &entity)
+	return s.webHookRepository.Create(ctx, &entity)
 }
 
-func (WebHookService) GetWebHooks(ctx context.Context, pageable dtos.Pageable) ([]entity.WebHookEntity, int64, error) {
-	return repository.WebHookRepository{}.FindAll(ctx, pageable)
+func (s WebHookService) GetWebHooks(ctx context.Context, pageable dtos.Pageable) ([]domain.WebHookEntity, int64, error) {
+	return s.webHookRepository.FindAll(ctx, pageable)
 }
 
-func (WebHookService) DeleteWebHook(ctx context.Context, webHookId uint) error {
-	repository := repository.WebHookRepository{}
-
+func (s WebHookService) DeleteWebHook(ctx context.Context, webHookId uint) error {
 	userClaim, err := helpers.ContextHelper().GetUserClaim(ctx)
 	if err != nil {
 		return err
 	}
 
-	entity, err := repository.FindById(ctx, webHookId)
+	entity, err := s.webHookRepository.FindById(ctx, webHookId)
 	if err != nil {
 		return err
 	}
 
 	entity.UpdatedBy = userClaim.Id
-	return repository.Delete(ctx, entity)
+	return s.webHookRepository.Delete(ctx, entity)
 }
 
-func (WebHookService) GetWebHook(ctx context.Context, webHookId uint) (entity.WebHookEntity, error) {
-	return repository.WebHookRepository{}.FindById(ctx, webHookId)
+func (s WebHookService) GetWebHook(ctx context.Context, webHookId uint) (domain.WebHookEntity, error) {
+	return s.webHookRepository.FindById(ctx, webHookId)
 }
 
-func (WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHookInformation dtos.WebHookInformation) error {
-	repository := repository.WebHookRepository{}
-
-	entity, err := repository.FindById(ctx, webHookId)
+func (s WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHookInformation dtos.WebHookInformation) error {
+	entity, err := s.webHookRepository.FindById(ctx, webHookId)
 	if err != nil {
 		return err
 	}
@@ -72,19 +74,18 @@ func (WebHookService) UpdateWebHook(ctx context.Context, webHookId uint, webHook
 		return err
 	}
 
-	return repository.Save(ctx, entity)
+	return s.webHookRepository.Save(ctx, entity)
 }
 
-func (WebHookService) NoteMessage(ctx context.Context, webHookId uint, message dtos.WebHookMessage) error {
-	repository := repository.WebHookRepository{}
-	entity, err := repository.FindById(ctx, webHookId)
+func (s WebHookService) NoteMessage(ctx context.Context, webHookId uint, message dtos.WebHookMessage) error {
+	entity, err := s.webHookRepository.FindById(ctx, webHookId)
 	if err != nil {
 		return err
 	}
 
 	entity.AddMessage(message)
 
-	err = repository.Save(ctx, entity)
+	err = s.webHookRepository.Save(ctx, entity)
 	if err != nil {
 		return err
 	}
