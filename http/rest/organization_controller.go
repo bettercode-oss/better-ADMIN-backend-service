@@ -8,6 +8,7 @@ import (
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/organization/factory"
 	"better-admin-backend-service/services"
+	etag "github.com/bettercode-oss/gin-middleware-etag"
 	"github.com/gin-gonic/gin"
 	pkgerrors "github.com/pkg/errors"
 	"net/http"
@@ -35,10 +36,10 @@ func (c OrganizationController) MapRoutes() {
 	route.POST("", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
 		c.createOrganization)
 	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getOrganizations)
 	route.GET("/:organizationId", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getOrganization)
 	route.PUT("/:organizationId/name", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
 		c.changeOrganizationName)

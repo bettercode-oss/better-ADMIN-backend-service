@@ -3,16 +3,16 @@ module better-admin-backend-service
 go 1.18
 
 require (
+	github.com/bettercode-oss/gin-middleware-etag v0.0.2
 	github.com/bettercode-oss/rest v0.0.4
 	github.com/gin-contrib/cors v1.4.0
-	github.com/gin-gonic/gin v1.8.1
+	github.com/gin-gonic/gin v1.8.2
 	github.com/go-ldap/ldap/v3 v3.3.0
 	github.com/go-testfixtures/testfixtures/v3 v3.5.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/jinzhu/configor v1.2.1
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
@@ -45,6 +45,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-sqlite3 v1.14.6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect

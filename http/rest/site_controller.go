@@ -7,6 +7,7 @@ import (
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/services"
+	etag "github.com/bettercode-oss/gin-middleware-etag"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 	pkgerrors "github.com/pkg/errors"
@@ -32,24 +33,24 @@ func (c SiteController) MapRoutes() {
 	route := c.routerGroup.Group("/site")
 
 	route.GET("/settings",
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getSettingsSummary)
 	route.GET("/settings/dooray-login",
 		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getDoorayLoginSetting)
 	route.PUT("/settings/dooray-login",
 		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
 		c.setDoorayLoginSetting)
 	route.GET("/settings/google-workspace-login",
 		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getGoogleWorkspaceLoginSetting)
 	route.PUT("/settings/google-workspace-login",
 		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
 		c.setGoogleWorkspaceLoginSetting)
 	route.GET("/settings/app-version",
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getAppVersion)
 	route.PUT("/settings/app-version",
 		c.increaseAppVersion)
