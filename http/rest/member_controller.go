@@ -7,6 +7,7 @@ import (
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/services"
+	etag "github.com/bettercode-oss/gin-middleware-etag"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -38,12 +39,12 @@ func (c MemberController) MapRoutes() {
 
 	route.POST("", c.signUpMember)
 	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getMembers)
 	route.GET("/my", middlewares.PermissionChecker([]string{"*"}),
 		c.getCurrentMember)
 	route.GET("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getMember)
 	route.PUT("/:id/assign-roles", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
 		c.assignRole)
@@ -52,7 +53,7 @@ func (c MemberController) MapRoutes() {
 	route.PUT("/:id/rejected", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
 		c.rejectMember)
 	route.GET("/search-filters", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getSearchFilters)
 }
 

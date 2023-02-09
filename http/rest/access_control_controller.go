@@ -7,6 +7,7 @@ import (
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/services"
+	etag "github.com/bettercode-oss/gin-middleware-etag"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -31,10 +32,10 @@ func (c AccessControlController) MapRoutes() {
 	route.POST("/permissions", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
 		c.createPermission)
 	route.GET("/permissions", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getPermissions)
 	route.GET("/permissions/:permissionId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getPermission)
 	route.PUT("/permissions/:permissionId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
 		c.updatePermission)
@@ -43,10 +44,10 @@ func (c AccessControlController) MapRoutes() {
 	route.POST("/roles", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
 		c.createRole)
 	route.GET("/roles", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getRoles)
 	route.GET("/roles/:roleId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getRole)
 	route.PUT("/roles/:roleId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
 		c.updateRole)

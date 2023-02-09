@@ -7,6 +7,7 @@ import (
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
 	"better-admin-backend-service/services"
+	etag "github.com/bettercode-oss/gin-middleware-etag"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -32,10 +33,10 @@ func (c WebHookController) MapRoutes() {
 	route.POST("", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
 		c.createWebHook)
 	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getWebHooks)
 	route.GET("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		middlewares.HttpEtagCache(0),
+		etag.HttpEtagCache(0),
 		c.getWebHook)
 	route.DELETE("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
 		c.deleteWebHook)
