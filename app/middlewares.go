@@ -3,6 +3,7 @@ package app
 import (
 	"better-admin-backend-service/app/middlewares"
 	"github.com/gin-contrib/cors"
+	"net/http"
 	"time"
 )
 
@@ -13,6 +14,7 @@ func (a *App) addGinMiddlewares() {
 	a.gin.Use(middlewares.ErrorHandler)
 	a.gin.Use(middlewares.JwtToken())
 	a.gin.Use(middlewares.GORMDb(a.gormDB))
+	a.gin.Use(middlewares.XssSanitizer(http.MethodPost, http.MethodPut))
 }
 
 func (a *App) newCorsConfig() cors.Config {
