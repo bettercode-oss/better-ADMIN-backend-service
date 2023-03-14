@@ -7,7 +7,7 @@ import (
 
 type SettingEntity struct {
 	gorm.Model
-	Key         string      `gorm:"type:varchar(20);not null"`
+	Key         string      `gorm:"type:varchar(50);not null"`
 	Value       string      `gorm:"type:text;not null"`
 	ValueObject interface{} `gorm:"-"`
 	CreatedBy   uint

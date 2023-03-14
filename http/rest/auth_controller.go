@@ -9,9 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
-	"time"
 )
 
 type AuthController struct {
@@ -38,8 +36,6 @@ func (c AuthController) MapRoutes() {
 	route.POST("", c.authWithSignIdPassword)
 	route.POST("/dooray", c.authWithDoorayIdPassword)
 	route.GET("/google-workspace", c.authWithGoogleWorkspaceAccount)
-	route.GET("/check", c.checkAuth)
-	route.POST("/logout", c.logout)
 	route.POST("/token/refresh", c.refreshAccessToken)
 }
 
@@ -67,27 +63,11 @@ func (c AuthController) authWithSignIdPassword(ctx *gin.Context) {
 		return
 	}
 
-	refreshToken, err := ctx.Request.Cookie("refreshToken")
-	if err != nil || len(refreshToken.Value) == 0 {
-		cookie := new(http.Cookie)
-		cookie.Name = "refreshToken"
-		cookie.Value = jwtToken.RefreshToken
-		cookie.HttpOnly = true
-		cookie.Path = "/"
-		cookie.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
-
-		http.SetCookie(ctx.Writer, cookie)
-	} else {
-		refreshToken.Value = jwtToken.RefreshToken
-		refreshToken.HttpOnly = true
-		refreshToken.Path = "/"
-		refreshToken.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
-
-		http.SetCookie(ctx.Writer, refreshToken)
-	}
-
-	result := map[string]string{}
+	result := map[string]any{}
 	result["accessToken"] = jwtToken.AccessToken
+	result["expiresAt"] = jwtToken.ExpiresAt
+	result["refreshToken"] = jwtToken.RefreshToken
+	result["refreshTokenExpiresIn"] = jwtToken.RefreshTokenExpiresIn
 
 	ctx.JSON(http.StatusOK, result)
 }
@@ -111,27 +91,11 @@ func (c AuthController) authWithDoorayIdPassword(ctx *gin.Context) {
 		return
 	}
 
-	refreshToken, err := ctx.Request.Cookie("refreshToken")
-	if err != nil || len(refreshToken.Value) == 0 {
-		cookie := new(http.Cookie)
-		cookie.Name = "refreshToken"
-		cookie.Value = jwtToken.RefreshToken
-		cookie.HttpOnly = true
-		cookie.Path = "/"
-		cookie.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
-
-		http.SetCookie(ctx.Writer, cookie)
-	} else {
-		refreshToken.Value = jwtToken.RefreshToken
-		refreshToken.HttpOnly = true
-		refreshToken.Path = "/"
-		refreshToken.Expires = jwtToken.GetRefreshTokenExpiresForCookie()
-
-		http.SetCookie(ctx.Writer, refreshToken)
-	}
-
-	result := map[string]string{}
+	result := map[string]any{}
 	result["accessToken"] = jwtToken.AccessToken
+	result["expiresAt"] = jwtToken.ExpiresAt
+	result["refreshToken"] = jwtToken.RefreshToken
+	result["refreshTokenExpiresIn"] = jwtToken.RefreshTokenExpiresIn
 
 	ctx.JSON(http.StatusOK, result)
 }
@@ -173,64 +137,32 @@ func (c AuthController) authWithGoogleWorkspaceAccount(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, redirect+"&accessToken="+jwtToken.AccessToken)
 }
 
-func (AuthController) checkAuth(ctx *gin.Context) {
-	refreshToken, err := ctx.Request.Cookie("refreshToken")
-	if err != nil || len(refreshToken.Value) == 0 {
-		ctx.JSON(http.StatusNotAcceptable, nil)
-		return
-	}
-
-	jwtAuthentication := security.JwtAuthentication{}
-	if err := jwtAuthentication.ValidateToken(refreshToken.Value); err != nil {
-		log.Error(err)
-		ctx.JSON(http.StatusNotAcceptable, nil)
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
-}
-
-func (AuthController) logout(ctx *gin.Context) {
-	cookie, err := ctx.Request.Cookie("refreshToken")
-	if err != nil {
-		ctx.JSON(http.StatusOK, nil)
-		return
-	}
-
-	cookie.Value = ""
-	cookie.HttpOnly = true
-	cookie.Path = "/"
-	cookie.Expires = time.Unix(0, 0)
-	cookie.MaxAge = -1
-	http.SetCookie(ctx.Writer, cookie)
-
-	ctx.Status(http.StatusNoContent)
-}
-
 func (c AuthController) refreshAccessToken(ctx *gin.Context) {
-	cookie, err := ctx.Request.Cookie("refreshToken")
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, nil)
+	var request map[string]string
+
+	if err := ctx.BindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	refreshToken := cookie.Value
 	jwtAuthentication := security.JwtAuthentication{}
-	accessToken, err := jwtAuthentication.RefreshAccessToken(refreshToken)
+	accessToken, expiresAt, err := jwtAuthentication.RefreshAccessToken(request["refreshToken"])
 
 	if err != nil {
 		helpers.ErrorHelper().InternalServerError(ctx, err)
 		return
 	}
 
-	err = c.logMemberAccessAtByToken(ctx.Request.Context(), refreshToken)
+	err = c.logMemberAccessAtByToken(ctx.Request.Context(), request["refreshToken"])
 	if err != nil {
 		helpers.ErrorHelper().InternalServerError(ctx, err)
 		return
 	}
 
-	result := map[string]string{}
+	result := map[string]any{}
 	result["accessToken"] = accessToken
+	result["expiresAt"] = expiresAt
+
 	ctx.JSON(http.StatusOK, result)
 }
 
