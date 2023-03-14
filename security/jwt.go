@@ -28,7 +28,8 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 		accessTokenClaims[key] = value
 	}
 
-	accessTokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	expiresAt := time.Now().Add(time.Minute * 15).Unix()
+	accessTokenClaims["exp"] = expiresAt
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims).SignedString([]byte(config.Config.JwtSecret))
 
 	if err != nil {
@@ -49,9 +50,11 @@ func (JwtAuthentication) GenerateJwtToken(claim UserClaim) (JwtToken, error) {
 	}
 
 	return JwtToken{
-		AccessToken:         accessToken,
-		RefreshToken:        refreshToken,
-		RefreshTokenExpires: refreshTokenExpires,
+		AccessToken:           accessToken,
+		ExpiresAt:             expiresAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresIn: refreshTokenExpires.Unix(),
+		RefreshTokenExpires:   refreshTokenExpires,
 	}, nil
 }
 
@@ -112,18 +115,18 @@ func (JwtAuthentication) ConvertTokenUserClaim(token string) (*UserClaim, error)
 	return &userClaim, nil
 }
 
-func (jwtAuthentication JwtAuthentication) RefreshAccessToken(refreshToken string) (string, error) {
+func (jwtAuthentication JwtAuthentication) RefreshAccessToken(refreshToken string) (string, int64, error) {
 	userClaim, err := jwtAuthentication.ConvertTokenUserClaim(refreshToken)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
 	jwtToken, err := jwtAuthentication.GenerateJwtToken(*userClaim)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	return jwtToken.AccessToken, nil
+	return jwtToken.AccessToken, jwtToken.ExpiresAt, nil
 }
 
 func (jwtAuthentication JwtAuthentication) ValidateToken(token string) error {
@@ -132,9 +135,11 @@ func (jwtAuthentication JwtAuthentication) ValidateToken(token string) error {
 }
 
 type JwtToken struct {
-	AccessToken         string
-	RefreshToken        string
-	RefreshTokenExpires time.Time
+	AccessToken           string
+	ExpiresAt             int64
+	RefreshToken          string
+	RefreshTokenExpiresIn int64
+	RefreshTokenExpires   time.Time
 }
 
 func (t JwtToken) GetRefreshTokenExpiresForCookie() time.Time {
