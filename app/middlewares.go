@@ -2,7 +2,9 @@ package app
 
 import (
 	"better-admin-backend-service/app/middlewares"
+	xss "github.com/bettercode-oss/gin-middleware-xss"
 	"github.com/gin-contrib/cors"
+	"net/http"
 	"time"
 )
 
@@ -13,6 +15,9 @@ func (a *App) addGinMiddlewares() {
 	a.gin.Use(middlewares.ErrorHandler)
 	a.gin.Use(middlewares.JwtToken())
 	a.gin.Use(middlewares.GORMDb(a.gormDB))
+	a.gin.Use(xss.Sanitizer(xss.Config{
+		UrlsToExclude:     []string{"/api/auth", "/api/auth/dooray"},
+		TargetHttpMethods: []string{http.MethodPost, http.MethodPut}}))
 }
 
 func (a *App) newCorsConfig() cors.Config {
