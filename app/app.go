@@ -42,8 +42,12 @@ func (a *App) SetUp() error {
 
 	a.gin.GET("/ws/:id", ws.WebSocketHandler(a.webSocketUpgrader))
 
-	a.addGinMiddlewares()
+	// Liveness Probe
+	a.gin.GET("/health", func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
 
+	a.addGinMiddlewares()
 	a.router.MapRoutes(a.gin.Group("/api"))
 	return nil
 }
