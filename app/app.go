@@ -6,6 +6,7 @@ import (
 	"better-admin-backend-service/http/ws"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/open-policy-agent/opa/rego"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -16,9 +17,10 @@ type App struct {
 	gin               *gin.Engine
 	router            routes.GinRoute
 	dbConnector       db.DatabaseConnector
+	regoQuery         *rego.PreparedEvalQuery
 }
 
-func NewApp(router routes.GinRoute, dbConnector db.DatabaseConnector) *App {
+func NewApp(router routes.GinRoute, dbConnector db.DatabaseConnector, regoQuery *rego.PreparedEvalQuery) *App {
 	g := gin.Default()
 	g.SetTrustedProxies(nil) // https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies
 
@@ -26,7 +28,7 @@ func NewApp(router routes.GinRoute, dbConnector db.DatabaseConnector) *App {
 		return true
 	}}
 
-	return &App{gin: g, webSocketUpgrader: upgrader, router: router, dbConnector: dbConnector}
+	return &App{gin: g, webSocketUpgrader: upgrader, router: router, dbConnector: dbConnector, regoQuery: regoQuery}
 }
 
 func (a *App) SetUp() error {

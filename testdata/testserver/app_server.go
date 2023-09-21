@@ -3,15 +3,25 @@ package testserver
 import (
 	"better-admin-backend-service/app"
 	"better-admin-backend-service/app/routes"
+	"context"
 	"fmt"
+	"github.com/open-policy-agent/opa/rego"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 func NewTestAppServer(router routes.GinRoute) *app.App {
-	testApp := app.NewApp(router, TestDbConnector{})
-	err := testApp.SetUp()
+	opaRego, err := rego.New(rego.Query("data.rest.allowed"), rego.Load([]string{
+		"../../authorization/rest/policy.rego", "../../authorization/rest/data.json",
+	}, nil)).PrepareForEval(context.TODO())
+
+	if err != nil {
+		panic(err)
+	}
+
+	testApp := app.NewApp(router, TestDbConnector{}, &opaRego)
+	err = testApp.SetUp()
 	if err != nil {
 		panic(err)
 	}

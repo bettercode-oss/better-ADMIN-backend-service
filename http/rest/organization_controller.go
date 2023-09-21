@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"better-admin-backend-service/app/middlewares"
-	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
@@ -33,24 +31,14 @@ func NewOrganizationController(
 func (c OrganizationController) MapRoutes() {
 	route := c.routerGroup.Group("/organizations")
 
-	route.POST("", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.createOrganization)
-	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		etag.HttpEtagCache(0),
-		c.getOrganizations)
-	route.GET("/:organizationId", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		etag.HttpEtagCache(0),
-		c.getOrganization)
-	route.PUT("/:organizationId/name", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.changeOrganizationName)
-	route.PUT("/:organizationId/change-position", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.changePosition)
-	route.PUT("/:organizationId/assign-roles", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.assignRoles)
-	route.PUT("/:organizationId/assign-members", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.assignMembers)
-	route.DELETE("/:organizationId", middlewares.PermissionChecker([]string{constants.PermissionManageOrganization}),
-		c.deleteOrganization)
+	route.POST("", c.createOrganization)
+	route.GET("", etag.HttpEtagCache(0), c.getOrganizations)
+	route.GET("/:organizationId", etag.HttpEtagCache(0), c.getOrganization)
+	route.DELETE("/:organizationId", c.deleteOrganization)
+	route.PUT("/:organizationId/name", c.changeOrganizationName)
+	route.PUT("/:organizationId/change-position", c.changePosition)
+	route.PUT("/:organizationId/assign-roles", c.assignRoles)
+	route.PUT("/:organizationId/assign-members", c.assignMembers)
 }
 
 func (c OrganizationController) createOrganization(ctx *gin.Context) {

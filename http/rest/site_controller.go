@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"better-admin-backend-service/app/middlewares"
 	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/errors"
@@ -32,28 +31,13 @@ func NewSiteController(
 func (c SiteController) MapRoutes() {
 	route := c.routerGroup.Group("/site")
 
-	route.GET("/settings",
-		etag.HttpEtagCache(0),
-		c.getSettingsSummary)
-	route.GET("/settings/dooray-login",
-		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		etag.HttpEtagCache(0),
-		c.getDoorayLoginSetting)
-	route.PUT("/settings/dooray-login",
-		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		c.setDoorayLoginSetting)
-	route.GET("/settings/google-workspace-login",
-		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		etag.HttpEtagCache(0),
-		c.getGoogleWorkspaceLoginSetting)
-	route.PUT("/settings/google-workspace-login",
-		middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		c.setGoogleWorkspaceLoginSetting)
-	route.GET("/settings/app-version",
-		etag.HttpEtagCache(0),
-		c.getAppVersion)
-	route.PUT("/settings/app-version",
-		c.increaseAppVersion)
+	route.GET("/settings", etag.HttpEtagCache(0), c.getSettingsSummary)
+	route.GET("/settings/dooray-login", etag.HttpEtagCache(0), c.getDoorayLoginSetting)
+	route.PUT("/settings/dooray-login", c.setDoorayLoginSetting)
+	route.GET("/settings/google-workspace-login", etag.HttpEtagCache(0), c.getGoogleWorkspaceLoginSetting)
+	route.PUT("/settings/google-workspace-login", c.setGoogleWorkspaceLoginSetting)
+	route.GET("/settings/app-version", etag.HttpEtagCache(0), c.getAppVersion)
+	route.PUT("/settings/app-version", c.increaseAppVersion)
 }
 func (c SiteController) getSettingsSummary(ctx *gin.Context) {
 	settings, err := c.siteService.GetSettings(ctx.Request.Context())

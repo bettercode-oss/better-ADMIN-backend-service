@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"better-admin-backend-service/app/middlewares"
-	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
@@ -29,30 +27,16 @@ func NewAccessControlController(rg *gin.RouterGroup,
 func (c AccessControlController) MapRoutes() {
 	route := c.routerGroup.Group("/access-control")
 
-	route.POST("/permissions", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.createPermission)
-	route.GET("/permissions", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		etag.HttpEtagCache(0),
-		c.getPermissions)
-	route.GET("/permissions/:permissionId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		etag.HttpEtagCache(0),
-		c.getPermission)
-	route.PUT("/permissions/:permissionId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.updatePermission)
-	route.DELETE("/permissions/:permissionId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.deletePermission)
-	route.POST("/roles", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.createRole)
-	route.GET("/roles", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		etag.HttpEtagCache(0),
-		c.getRoles)
-	route.GET("/roles/:roleId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		etag.HttpEtagCache(0),
-		c.getRole)
-	route.PUT("/roles/:roleId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.updateRole)
-	route.DELETE("/roles/:roleId", middlewares.PermissionChecker([]string{constants.PermissionManageAccessControl}),
-		c.deleteRole)
+	route.POST("/permissions", c.createPermission)
+	route.GET("/permissions", etag.HttpEtagCache(0), c.getPermissions)
+	route.GET("/permissions/:permissionId", etag.HttpEtagCache(0), c.getPermission)
+	route.PUT("/permissions/:permissionId", c.updatePermission)
+	route.DELETE("/permissions/:permissionId", c.deletePermission)
+	route.POST("/roles", c.createRole)
+	route.GET("/roles", etag.HttpEtagCache(0), c.getRoles)
+	route.GET("/roles/:roleId", etag.HttpEtagCache(0), c.getRole)
+	route.PUT("/roles/:roleId", c.updateRole)
+	route.DELETE("/roles/:roleId", c.deleteRole)
 }
 
 func (c AccessControlController) createPermission(ctx *gin.Context) {

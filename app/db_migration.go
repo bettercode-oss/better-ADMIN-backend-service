@@ -1,7 +1,6 @@
 package app
 
 import (
-	"better-admin-backend-service/constants"
 	memberDomain "better-admin-backend-service/member/domain"
 	organizationDomain "better-admin-backend-service/organization/domain"
 	rbacDomain "better-admin-backend-service/rbac/domain"
@@ -25,32 +24,132 @@ func (a *App) migrateDatabase() error {
 
 	if permissionCount == 0 {
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			1, "pre-define", constants.PermissionManageSystemSettings, "시스템 설정(예. 두레이 로그인 등) 권한", time.Now(), time.Now()).Error; err != nil {
+			1, "pre-define", "access-control-permission.all", "권한 관리에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			2, "pre-define", constants.PermissionManageMembers, "멤버 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			2, "pre-define", "access-control-permission.create", "권한 생성", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			3, "pre-define", constants.PermissionManageAccessControl, "접근 제어 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			3, "pre-define", "access-control-permission.read", "권한 조회", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			4, "pre-define", constants.PermissionManageOrganization, "조직 관리 권한", time.Now(), time.Now()).Error; err != nil {
+			4, "pre-define", "access-control-permission.update", "권한 수정", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			5, "pre-define", constants.PermissionNoteWebHooks, "웹훅 전송 권한", time.Now(), time.Now()).Error; err != nil {
+			5, "pre-define", "access-control-permission.delete", "권한 삭제", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 
 		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
-			6, "pre-define", constants.PermissionViewMonitoring, "모니터링 권한", time.Now(), time.Now()).Error; err != nil {
+			6, "pre-define", "access-control-role.all", "역할 관리에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			7, "pre-define", "access-control-role.create", "역할 생성", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			8, "pre-define", "access-control-role.read", "역할 조회", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			9, "pre-define", "access-control-role.update", "역할 수정", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			10, "pre-define", "access-control-role.delete", "역할 삭제", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			11, "pre-define", "member.all", "멤버 관리에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			12, "pre-define", "member.read", "멤버 조회", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			13, "pre-define", "member.update", "멤버 승인/거부 및 역할 할당", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			14, "pre-define", "organization.all", "조직 관리에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			15, "pre-define", "organization.create", "조직 생성", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			16, "pre-define", "organization.read", "조직 조회", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			17, "pre-define", "organization.update", "조직 수정", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			18, "pre-define", "organization.delete", "조직 삭제", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			19, "pre-define", "site-settings.all", "사이트 셋팅에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			20, "pre-define", "site-settings.read", "사이트 셋팅 조회", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			21, "pre-define", "site-settings.update", "사이트 셋팅 수정", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			22, "pre-define", "web-hook.all", "웹훅에 관한 모든 권한", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			23, "pre-define", "web-hook.create", "웹훅 생성", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			24, "pre-define", "web-hook.read", "웹훅 조회", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			25, "pre-define", "web-hook.update", "웹훅 수정", time.Now(), time.Now()).Error; err != nil {
+			return err
+		}
+
+		if err := a.gormDB.Exec("INSERT INTO permissions(id, type, name, description, created_at, updated_at, created_by, updated_by) values(?, ?, ?, ?, ?, ?, 1, 1)",
+			26, "pre-define", "web-hook.delete", "웹훅 삭제", time.Now(), time.Now()).Error; err != nil {
 			return err
 		}
 	}
@@ -64,7 +163,7 @@ func (a *App) migrateDatabase() error {
 			return err
 		}
 
-		if err := a.gormDB.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1), (1, 6)").Error; err != nil {
+		if err := a.gormDB.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(1, 1), (1, 6), (1, 19), (1, 22)").Error; err != nil {
 			return err
 		}
 
@@ -73,7 +172,7 @@ func (a *App) migrateDatabase() error {
 			return err
 		}
 
-		if err := a.gormDB.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 2),(2, 3),(2, 4)").Error; err != nil {
+		if err := a.gormDB.Exec("INSERT INTO role_permissions(role_entity_id, permission_entity_id) values(2, 11),(2, 14)").Error; err != nil {
 			return err
 		}
 	}

@@ -5,7 +5,9 @@ import (
 	"better-admin-backend-service/app/db"
 	"better-admin-backend-service/config"
 	"better-admin-backend-service/http/rest"
+	"context"
 	filename "github.com/keepeye/logrus-filename"
+	"github.com/open-policy-agent/opa/rego"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +19,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Fatal(app.NewApp(rest.Router{}, db.ProductionDbConnector{}).Run())
+	regoQuery, err := rego.New(rego.Query("data.rest.allowed"), rego.Load([]string{
+		"authorization/rest/policy.rego", "authorization/rest/data.json",
+	}, nil)).PrepareForEval(context.TODO())
+
+	if err != nil {
+		log.Fatal("rego error", err)
+	}
+
+	log.Fatal(app.NewApp(rest.Router{}, db.ProductionDbConnector{}, &regoQuery).Run())
 }
 
 func setUpLogFormatter() {

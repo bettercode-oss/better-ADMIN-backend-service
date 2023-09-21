@@ -12,8 +12,10 @@ const AccessControlMaxAgeLimitHours = 24 // https://httptoolkit.com/blog/cache-y
 
 func (a *App) addGinMiddlewares() {
 	a.gin.Use(cors.New(a.newCorsConfig()))
+	a.gin.Use(middlewares.NoRoute(a.gin))
 	a.gin.Use(middlewares.ErrorHandler)
 	a.gin.Use(middlewares.JwtToken())
+	a.gin.Use(middlewares.RestAuthorizer(a.regoQuery))
 	a.gin.Use(middlewares.GORMDb(a.gormDB))
 	a.gin.Use(xss.Sanitizer(xss.Config{
 		UrlsToExclude:     []string{"/api/auth", "/api/auth/dooray"},

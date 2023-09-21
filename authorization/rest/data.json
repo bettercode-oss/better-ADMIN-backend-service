@@ -1,0 +1,103 @@
+{
+  "api": {
+    "/api/auth": {
+      "POST": []
+    },
+    "/api/auth/dooray": {
+      "POST": []
+    },
+    "/api/auth/google-workspace": {
+      "GET": []
+    },
+    "/api/auth/token/refresh": {
+      "POST": []
+    },
+    "/api/access-control/permissions": {
+      "POST": ["access-control-permission.create"],
+      "GET": ["access-control-permission.read"]
+    },
+    "/api/access-control/permissions/:permissionId": {
+      "GET": ["access-control-permission.read"],
+      "PUT": ["access-control-permission.update"],
+      "DELETE": ["access-control-permission.delete"]
+    },
+    "/api/access-control/roles": {
+      "POST": ["access-control-role.create"],
+      "GET": ["access-control-role.read"]
+    },
+    "/api/access-control/roles/:roleId": {
+      "GET": ["access-control-role.read"],
+      "PUT": ["access-control-role.update"],
+      "DELETE": ["access-control-role.delete"]
+    },
+    "/api/members": {
+      "POST": [],
+      "GET": ["all-authenticated-members"]
+    },
+    "/api/members/my": {
+      "GET": ["all-authenticated-members"]
+    },
+    "/api/members/:id": {
+      "GET": ["member.read"]
+    },
+    "/api/members/:id/assign-roles": {
+      "PUT": ["member.update"]
+    },
+    "/api/members/:id/approved": {
+      "PUT": ["member.update"]
+    },
+    "/api/members/:id/rejected": {
+      "PUT": ["member.update"]
+    },
+    "/api/members/search-filters": {
+      "GET": ["all-authenticated-members"]
+    },
+    "/api/organizations": {
+      "POST": ["organization.create"],
+      "GET": ["organization.read"]
+    },
+    "/api/organizations/:organizationId": {
+      "GET": ["organization.read"],
+      "DELETE": ["organization.delete"]
+    },
+    "/api/organizations/:organizationId/name": {
+      "PUT": ["organization.update"]
+    },
+    "/api/organizations/:organizationId/change-position": {
+      "PUT": ["organization.update"]
+    },
+    "/api/organizations/:organizationId/assign-roles": {
+      "PUT": ["organization.update"]
+    },
+    "/api/organizations/:organizationId/assign-members": {
+      "PUT": ["organization.update"]
+    },
+    "/api/site/settings": {
+      "GET": []
+    },
+    "/api/site/settings/dooray-login": {
+      "GET": ["site-settings.read"],
+      "PUT": ["site-settings.update"]
+    },
+    "/api/site/settings/google-workspace-login": {
+      "GET": ["site-settings.read"],
+      "PUT": ["site-settings.update"]
+    },
+    "/api/site/settings/app-version": {
+      "GET": [],
+      "PUT": []
+    },
+    "/api/web-hooks": {
+      "POST": ["web-hook.create"],
+      "GET": ["web-hook.read"]
+    },
+    "/api/web-hooks/:id": {
+      "GET": ["web-hook.read"],
+      "DELETE": ["web-hook.delete"],
+      "PUT": ["web-hook.update"]
+    },
+    "/api/web-hooks/:id/note": {
+      "POST": ["web-hook-note.create"]
+    }
+  }
+}
