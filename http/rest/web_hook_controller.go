@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"better-admin-backend-service/app/middlewares"
-	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/errors"
 	"better-admin-backend-service/helpers"
@@ -30,20 +28,12 @@ func NewWebHookController(
 
 func (c WebHookController) MapRoutes() {
 	route := c.routerGroup.Group("/web-hooks")
-	route.POST("", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		c.createWebHook)
-	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		etag.HttpEtagCache(0),
-		c.getWebHooks)
-	route.GET("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		etag.HttpEtagCache(0),
-		c.getWebHook)
-	route.DELETE("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		c.deleteWebHook)
-	route.PUT("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageSystemSettings}),
-		c.updateWebHook)
-	route.POST("/:id/note", middlewares.PermissionChecker([]string{constants.PermissionNoteWebHooks}),
-		c.noteMessage)
+	route.POST("", c.createWebHook)
+	route.GET("", etag.HttpEtagCache(0), c.getWebHooks)
+	route.GET("/:id", etag.HttpEtagCache(0), c.getWebHook)
+	route.DELETE("/:id", c.deleteWebHook)
+	route.PUT("/:id", c.updateWebHook)
+	route.POST("/:id/note", c.noteMessage)
 }
 
 func (c WebHookController) createWebHook(ctx *gin.Context) {

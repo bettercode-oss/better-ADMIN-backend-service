@@ -93,7 +93,7 @@ func TestMemberController_getCurrentMember_MemberId가_유효하지_않는_경�
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/my", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1000,
 	}, time.Minute*15)
 
@@ -117,7 +117,7 @@ func TestMemberController_getCurrentMember(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/my", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 	}, time.Minute*15)
 
@@ -135,40 +135,19 @@ func TestMemberController_getCurrentMember(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"id":          float64(1),
 		"type":        "site",
 		"typeName":    "사이트",
 		"name":        "사이트 관리자",
-		"roles":       []interface{}{"SYSTEM MANAGER", "MEMBER MANAGER"},
-		"permissions": []interface{}{"MANAGE_SYSTEM_SETTINGS", "MANAGE_MEMBERS"},
+		"roles":       []any{"SYSTEM MANAGER", "MEMBER MANAGER"},
+		"permissions": []any{"MANAGE_SYSTEM_SETTINGS", "MANAGE_MEMBERS"},
 		"picture":     "",
 	}
 	assert.Equal(t, expected, actual)
-}
-
-func TestMemberController_getMembers_권한이_없는_경우(t *testing.T) {
-	// given
-	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id":          1,
-		"Permissions": []string{"TC"},
-	}, time.Minute*15)
-
-	if err != nil {
-		t.Failed()
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	rec := httptest.NewRecorder()
-
-	// when
-	ginApp.ServeHTTP(rec, req)
-
-	// then
-	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
 func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
@@ -176,11 +155,9 @@ func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&roleIds=1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -196,12 +173,12 @@ func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":           float64(1),
 				"signId":       "siteadm",
 				"type":         "site",
@@ -210,22 +187,22 @@ func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
 				"name":         "사이트 관리자",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -233,7 +210,7 @@ func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":           float64(2),
 				"signId":       "",
 				"type":         "dooray",
@@ -242,26 +219,26 @@ func TestMemberController_getMembers_by_멤버_역할(t *testing.T) {
 				"name":         "유영모",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MEMBER MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -281,11 +258,9 @@ func TestMemberController_getMembers_승인된_멤버(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=2&status=approved", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -301,33 +276,33 @@ func TestMemberController_getMembers_승인된_멤버(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":          float64(1),
 				"signId":      "siteadm",
 				"candidateId": "siteadm",
 				"type":        "site",
 				"typeName":    "사이트",
 				"name":        "사이트 관리자",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -337,33 +312,33 @@ func TestMemberController_getMembers_승인된_멤버(t *testing.T) {
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":          float64(2),
 				"signId":      "",
 				"candidateId": "2222",
 				"type":        "dooray",
 				"typeName":    "두레이",
 				"name":        "유영모",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MEMBER MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -385,11 +360,9 @@ func TestMemberController_getMembers_신청한_멤버(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=applied", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -405,20 +378,20 @@ func TestMemberController_getMembers_신청한_멤버(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":            float64(4),
 				"signId":        "ymyoo3",
 				"candidateId":   "ymyoo3",
 				"type":          "site",
 				"typeName":      "사이트",
 				"name":          "유영모3",
-				"roles":         []interface{}{},
-				"organizations": []interface{}{},
+				"roles":         []any{},
+				"organizations": []any{},
 				"createdAt":     "1982-01-04T00:00:00Z",
 				"lastAccessAt":  "1982-01-05T00:00:00Z",
 			},
@@ -434,11 +407,9 @@ func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&name=유", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -454,12 +425,12 @@ func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":           float64(2),
 				"signId":       "",
 				"type":         "dooray",
@@ -468,26 +439,26 @@ func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 				"name":         "유영모",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MEMBER MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -495,7 +466,7 @@ func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":           float64(3),
 				"signId":       "ymyoo",
 				"type":         "site",
@@ -504,13 +475,13 @@ func TestMemberController_getMembers_by_멤버_이름(t *testing.T) {
 				"name":         "유영모2",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles":        []interface{}{},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"roles":        []any{},
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(4),
 						"name": "부서C",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
@@ -530,11 +501,9 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members?page=1&pageSize=10&status=approved&types=dooray,site", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -550,12 +519,12 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":           float64(1),
 				"signId":       "siteadm",
 				"type":         "site",
@@ -564,22 +533,22 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 				"name":         "사이트 관리자",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -587,7 +556,7 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":           float64(2),
 				"signId":       "",
 				"type":         "dooray",
@@ -596,26 +565,26 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 				"name":         "유영모",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles": []interface{}{
-					map[string]interface{}{
+				"roles": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "SYSTEM MANAGER",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MEMBER MANAGER",
 					},
 				},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "베터코드 연구소",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"id":   float64(2),
 								"name": "MEMBER MANAGER",
 							},
@@ -623,7 +592,7 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":           float64(3),
 				"signId":       "ymyoo",
 				"type":         "site",
@@ -632,13 +601,13 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 				"name":         "유영모2",
 				"createdAt":    "1982-01-04T00:00:00Z",
 				"lastAccessAt": "1982-01-05T00:00:00Z",
-				"roles":        []interface{}{},
-				"organizations": []interface{}{
-					map[string]interface{}{
+				"roles":        []any{},
+				"organizations": []any{
+					map[string]any{
 						"id":   float64(4),
 						"name": "부서C",
-						"roles": []interface{}{
-							map[string]interface{}{
+						"roles": []any{
+							map[string]any{
 								"id":   float64(1),
 								"name": "SYSTEM MANAGER",
 							},
@@ -656,11 +625,9 @@ func TestMemberController_getMembers_by_멤버_유형(t *testing.T) {
 func TestMemberController_getMember_권한이_없는_경우(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"TC",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -681,10 +648,10 @@ func TestMemberController_getMember_member_id_가_유효하지_않은_경우(t *
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.read",
 		},
 	}, time.Minute*15)
 
@@ -706,10 +673,10 @@ func TestMemberController_getMember(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.read",
 		},
 	}, time.Minute*15)
 
@@ -726,18 +693,18 @@ func TestMemberController_getMember(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, float64(1), actual.(map[string]interface{})["id"])
-	assert.Equal(t, "site", actual.(map[string]interface{})["type"])
-	assert.Equal(t, "사이트", actual.(map[string]interface{})["typeName"])
-	assert.Equal(t, "사이트 관리자", actual.(map[string]interface{})["name"])
+	assert.Equal(t, float64(1), actual.(map[string]any)["id"])
+	assert.Equal(t, "site", actual.(map[string]any)["type"])
+	assert.Equal(t, "사이트", actual.(map[string]any)["typeName"])
+	assert.Equal(t, "사이트 관리자", actual.(map[string]any)["name"])
 
-	memberRoles := actual.(map[string]interface{})["roles"].([]interface{})
+	memberRoles := actual.(map[string]any)["roles"].([]any)
 	assert.Equal(t, 1, len(memberRoles))
 	memberRoleIndex := 0
-	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]interface{})["id"])
-	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]interface{})["name"])
+	assert.Equal(t, float64(1), memberRoles[memberRoleIndex].(map[string]any)["id"])
+	assert.Equal(t, "SYSTEM MANAGER", memberRoles[memberRoleIndex].(map[string]any)["name"])
 }
 
 func TestMemberController_assignRole_Bad_Request_필수_값_확인(t *testing.T) {
@@ -746,10 +713,10 @@ func TestMemberController_assignRole_Bad_Request_필수_값_확인(t *testing.T)
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -774,10 +741,10 @@ func TestMemberController_assignRole_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"member.read",
 		},
 	}, time.Minute*15)
 
@@ -804,10 +771,10 @@ func TestMemberController_assignRole_member_id가_유효하지_않는_경우(t *
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1000/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -834,10 +801,10 @@ func TestMemberController_assignRole(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -864,10 +831,10 @@ func TestMemberController_assignRoles_역할이_없는_경우(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -890,10 +857,10 @@ func TestMemberController_approveMember_member_id_가_유효하지_않은_경우
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1000/approved", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -915,10 +882,10 @@ func TestMemberController_approveMember_member_id_가_유효하지_않은_경우
 func TestMemberController_approveMember_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/4/approved", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"member.read",
 		},
 	}, time.Minute*15)
 
@@ -942,10 +909,10 @@ func TestMemberController_approveMember(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/4/approved", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -969,10 +936,10 @@ func TestMemberController_approveMember_이미_승인된_경우(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/1/approved", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -996,10 +963,10 @@ func TestMemberController_rejectMember_권한_확인(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/4/rejected", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"member.read",
 		},
 	}, time.Minute*15)
 
@@ -1023,10 +990,10 @@ func TestMemberController_rejectMember_member_id_가_유효하지_않은_경우(
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/10000/rejected", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -1050,10 +1017,10 @@ func TestMemberController_rejectMember(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodPut, "/api/members/4/rejected", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_MEMBERS",
+			"member.update",
 		},
 	}, time.Minute*15)
 
@@ -1077,11 +1044,9 @@ func TestMemberController_getSearchFilters(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/members/search-filters", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"MANAGE_MEMBERS",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -1095,39 +1060,39 @@ func TestMemberController_getSearchFilters(t *testing.T) {
 	ginApp.ServeHTTP(rec, req)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := []interface{}{
-		map[string]interface{}{
+	expected := []any{
+		map[string]any{
 			"name": "type",
-			"filters": []interface{}{
-				map[string]interface{}{
+			"filters": []any{
+				map[string]any{
 					"text":  "사이트",
 					"value": "site",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"text":  "두레이",
 					"value": "dooray",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"text":  "구글",
 					"value": "google",
 				},
 			},
 		},
-		map[string]interface{}{
+		map[string]any{
 			"name": "role",
-			"filters": []interface{}{
-				map[string]interface{}{
+			"filters": []any{
+				map[string]any{
 					"text":  "SYSTEM MANAGER",
 					"value": "1",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"text":  "MEMBER MANAGER",
 					"value": "2",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"text":  "테스트 관리자",
 					"value": "3",
 				},

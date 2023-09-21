@@ -19,11 +19,9 @@ func TestOrganizationController_createOrganization_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"TC",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -46,10 +44,10 @@ func TestOrganizationController_createOrganization_필수값_확인(t *testing.T
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.create",
 		},
 	}, time.Minute*15)
 
@@ -76,10 +74,10 @@ func TestOrganizationController_createOrganization_최상위_조직으로_추가
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.create",
 		},
 	}, time.Minute*15)
 
@@ -107,10 +105,10 @@ func TestOrganizationController_createOrganization_상위조직이_있는_경우
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/organizations", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.create",
 		},
 	}, time.Minute*15)
 
@@ -131,10 +129,10 @@ func TestOrganizationController_createOrganization_상위조직이_있는_경우
 func TestOrganizationController_getOrganizations_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"organization.create",
 		},
 	}, time.Minute*15)
 
@@ -156,10 +154,10 @@ func TestOrganizationController_getOrganizations(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.read",
 		},
 	}, time.Minute*15)
 
@@ -176,29 +174,29 @@ func TestOrganizationController_getOrganizations(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := []interface{}{
-		map[string]interface{}{
+	expected := []any{
+		map[string]any{
 			"id":   float64(1),
 			"name": "베터코드 연구소",
-			"subOrganizations": []interface{}{
-				map[string]interface{}{
+			"subOrganizations": []any{
+				map[string]any{
 					"id":   float64(3),
 					"name": "부서B",
-					"subOrganizations": []interface{}{
-						map[string]interface{}{
+					"subOrganizations": []any{
+						map[string]any{
 							"id":   float64(4),
 							"name": "부서C",
-							"roles": []interface{}{
-								map[string]interface{}{
+							"roles": []any{
+								map[string]any{
 									"id":   float64(1),
 									"name": "SYSTEM MANAGER",
 								},
 							},
-							"members": []interface{}{
-								map[string]interface{}{
+							"members": []any{
+								map[string]any{
 									"id":   float64(3),
 									"name": "유영모2",
 								},
@@ -207,46 +205,46 @@ func TestOrganizationController_getOrganizations(t *testing.T) {
 					},
 				},
 			},
-			"roles": []interface{}{
-				map[string]interface{}{
+			"roles": []any{
+				map[string]any{
 					"id":   float64(1),
 					"name": "SYSTEM MANAGER",
-				}, map[string]interface{}{
+				}, map[string]any{
 					"id":   float64(2),
 					"name": "MEMBER MANAGER",
 				},
 			},
-			"members": []interface{}{
-				map[string]interface{}{
+			"members": []any{
+				map[string]any{
 					"id":   float64(1),
 					"name": "사이트 관리자",
-				}, map[string]interface{}{
+				}, map[string]any{
 					"id":   float64(2),
 					"name": "유영모",
 				},
 			},
 		},
-		map[string]interface{}{
+		map[string]any{
 			"id":   float64(5),
 			"name": "베터코드 연구소2",
-			"subOrganizations": []interface{}{
-				map[string]interface{}{
+			"subOrganizations": []any{
+				map[string]any{
 					"id":   float64(2),
 					"name": "부서A",
 				},
 			},
 		},
 	}
-	assert.Equal(t, expected, actual.([]interface{}))
+	assert.Equal(t, expected, actual.([]any))
 }
 
 func TestOrganizationController_getOrganization_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"organization.create",
 		},
 	}, time.Minute*15)
 
@@ -268,10 +266,10 @@ func TestOrganizationController_getOrganization(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.read",
 		},
 	}, time.Minute*15)
 
@@ -288,27 +286,27 @@ func TestOrganizationController_getOrganization(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"id":        float64(1),
 		"name":      "베터코드 연구소",
 		"createdAt": "1982-01-04T00:00:00Z",
-		"roles": []interface{}{
-			map[string]interface{}{
+		"roles": []any{
+			map[string]any{
 				"id":   float64(1),
 				"name": "SYSTEM MANAGER",
-			}, map[string]interface{}{
+			}, map[string]any{
 				"id":   float64(2),
 				"name": "MEMBER MANAGER",
 			},
 		},
-		"members": []interface{}{
-			map[string]interface{}{
+		"members": []any{
+			map[string]any{
 				"id":   float64(1),
 				"name": "사이트 관리자",
-			}, map[string]interface{}{
+			}, map[string]any{
 				"id":   float64(2),
 				"name": "유영모",
 			},
@@ -323,10 +321,10 @@ func TestOrganizationController_getOrganization_ID_로_찾을수없는_경우(t 
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/organizations/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.read",
 		},
 	}, time.Minute*15)
 
@@ -350,10 +348,10 @@ func TestOrganizationController_changeOrganizationName_권한_확인(t *testing.
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/name", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"organization.read",
 		},
 	}, time.Minute*15)
 
@@ -380,10 +378,10 @@ func TestOrganizationController_changeOrganizationName_id_가_없는_경우(t *t
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/name", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -410,10 +408,10 @@ func TestOrganizationController_changeOrganizationName(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/name", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -440,10 +438,10 @@ func TestOrganizationController_changePosition_id_가_없는_경우(t *testing.T
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/change-position", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -470,10 +468,10 @@ func TestOrganizationController_changePosition_하위로_변경(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/2/change-position", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -498,10 +496,10 @@ func TestOrganizationController_changePosition_최상위로_변경(t *testing.T)
 	requestBody := `{}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/2/change-position", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -528,10 +526,10 @@ func TestOrganizationController_assignRoles_id_가_없는_경우(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -558,10 +556,10 @@ func TestOrganizationController_AssignRoles(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/assign-roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -585,10 +583,10 @@ func TestOrganizationController_assignMembers_필수_값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-members", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -615,10 +613,10 @@ func TestOrganizationController_assignMembers_id_가_없는_경우(t *testing.T)
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1000/assign-members", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -645,10 +643,10 @@ func TestOrganizationController_assignMembers(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/organizations/1/assign-members", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.update",
 		},
 	}, time.Minute*15)
 
@@ -671,10 +669,10 @@ func TestOrganizationController_deleteOrganization_id가_없는_경우(t *testin
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.delete",
 		},
 	}, time.Minute*15)
 
@@ -696,10 +694,10 @@ func TestOrganizationController_DeleteOrganization_최하위(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/4", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.delete",
 		},
 	}, time.Minute*15)
 
@@ -721,10 +719,10 @@ func TestOrganizationController_DeleteOrganization_최상위(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/organizations/1", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ORGANIZATION",
+			"organization.delete",
 		},
 	}, time.Minute*15)
 

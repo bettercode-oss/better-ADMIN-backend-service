@@ -14,6 +14,7 @@ RUN apk add -U tzdata
 WORKDIR /go/bin/
 # copy config files to image
 COPY --from=builder /go/src/better-admin-backend-service/config/*.json ./config/
+COPY --from=builder /go/src/admin-backend/authorization ./authorization
 # copy execute file to image
 COPY --from=builder /go/bin/better-admin-backend-service .
 EXPOSE 2016

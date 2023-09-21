@@ -26,10 +26,10 @@ func TestSiteController_getSettingsSummary(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"doorayLoginUsed":          true,
 		"googleWorkspaceLoginUsed": true,
 		"googleWorkspaceOAuthUri":  "https://accounts.google.com/o/oauth2/auth?client_id=test-client-id&redirect_uri=http://localhost:2016&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email&approval_prompt=force&access_type=offline",
@@ -43,11 +43,11 @@ func TestSiteController_getDoorayLoginSetting(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/dooray-login", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.read",
 		},
 	}, time.Minute*15)
 
@@ -64,11 +64,11 @@ func TestSiteController_getDoorayLoginSetting(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, true, actual.(map[string]interface{})["used"])
-	assert.Equal(t, "bettercode", actual.(map[string]interface{})["domain"])
-	assert.Equal(t, "test token....", actual.(map[string]interface{})["authorizationToken"])
+	assert.Equal(t, true, actual.(map[string]any)["used"])
+	assert.Equal(t, "bettercode", actual.(map[string]any)["domain"])
+	assert.Equal(t, "test token....", actual.(map[string]any)["authorizationToken"])
 }
 
 func TestSiteController_getDoorayLoginSetting_토큰이_없는_경우(t *testing.T) {
@@ -87,7 +87,7 @@ func TestSiteController_getDoorayLoginSetting_토큰이_없는_경우(t *testing
 func TestSiteController_getDoorayLoginSetting_권한이_없는_경우(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/dooray-login", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
@@ -117,11 +117,11 @@ func TestSiteController_setDoorayLoginSetting_Bad_Request_필수값_확인(t *te
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/dooray-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -147,11 +147,11 @@ func TestSiteController_setDoorayLoginSetting_Bad_Request_used_true_일_때_필�
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/dooray-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -181,11 +181,11 @@ func TestSiteController_setDoorayLoginSetting(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/dooray-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -208,11 +208,11 @@ func TestSiteController_getGoogleWorkspaceLoginSetting(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/site/settings/google-workspace-login", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.read",
 		},
 	}, time.Minute*15)
 
@@ -229,10 +229,10 @@ func TestSiteController_getGoogleWorkspaceLoginSetting(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"used":         true,
 		"domain":       "bettercode.kr",
 		"clientId":     "test-client-id",
@@ -256,11 +256,11 @@ func TestSiteController_setGoogleWorkspaceLoginSetting(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/google-workspace-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -288,11 +288,11 @@ func TestSiteController_setGoogleWorkspaceLoginSetting_Bad_Request_필수_값_�
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/google-workspace-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -319,11 +319,11 @@ func TestSiteController_setGoogleWorkspaceLoginSetting_Bad_Request_used_가_true
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/site/settings/google-workspace-login", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id":    1,
 		"Roles": []string{},
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"site-settings.update",
 		},
 	}, time.Minute*15)
 
@@ -356,10 +356,10 @@ func TestSiteController_getAppVersion(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"version": float64(2),
 	}
 

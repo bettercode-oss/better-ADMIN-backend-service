@@ -19,10 +19,10 @@ func TestWebHookController_createWebHook_필수값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.create",
 		},
 	}, time.Minute*15)
 
@@ -51,10 +51,10 @@ func TestWebHookController_CreateWebHook(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.create",
 		},
 	}, time.Minute*15)
 
@@ -78,10 +78,10 @@ func TestWebHookController_getWebHooks(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks?page=1&pageSize=2", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.read",
 		},
 	}, time.Minute*15)
 
@@ -96,18 +96,18 @@ func TestWebHookController_getWebHooks(t *testing.T) {
 
 	// then
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"totalCount": float64(3),
-		"result": []interface{}{
-			map[string]interface{}{
+		"result": []any{
+			map[string]any{
 				"id":          float64(1),
 				"name":        "테스트 웹훅",
 				"description": "...",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":          float64(2),
 				"name":        "테스트 웹훅2",
 				"description": "...",
@@ -115,7 +115,7 @@ func TestWebHookController_getWebHooks(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, actual.(map[string]interface{}))
+	assert.Equal(t, expected, actual.(map[string]any))
 }
 
 func TestWebHookController_getWebHook_id가_없는_경우(t *testing.T) {
@@ -123,10 +123,10 @@ func TestWebHookController_getWebHook_id가_없는_경우(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.read",
 		},
 	}, time.Minute*15)
 
@@ -148,10 +148,10 @@ func TestWebHookController_getWebHook(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/web-hooks/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.read",
 		},
 	}, time.Minute*15)
 
@@ -168,14 +168,14 @@ func TestWebHookController_getWebHook(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var resp interface{}
+	var resp any
 	json.Unmarshal(rec.Body.Bytes(), &resp)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"id":          float64(3),
 		"name":        "테스트 웹훅3",
 		"description": "...",
-		"webHookCallSpec": map[string]interface{}{
+		"webHookCallSpec": map[string]any{
 			"httpRequestMethod": "POST",
 			"url":               "http://example.com/api/web-hooks/3/note",
 			"accessToken":       "test-access-tokens3",
@@ -183,7 +183,7 @@ func TestWebHookController_getWebHook(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, resp.(map[string]interface{}))
+	assert.Equal(t, expected, resp.(map[string]any))
 }
 
 func TestWebHookController_deleteWebHook_id가_없는_경우(t *testing.T) {
@@ -191,10 +191,10 @@ func TestWebHookController_deleteWebHook_id가_없는_경우(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/web-hooks/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.delete",
 		},
 	}, time.Minute*15)
 
@@ -216,10 +216,10 @@ func TestWebHookController_DeleteWebHook(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/web-hooks/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.delete",
 		},
 	}, time.Minute*15)
 
@@ -243,10 +243,10 @@ func TestWebHookController_updateWebHook_필수값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/1000", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.update",
 		},
 	}, time.Minute*15)
 
@@ -275,10 +275,10 @@ func TestWebHookController_updateWebHook_id가_없는_경우(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/1000", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.update",
 		},
 	}, time.Minute*15)
 
@@ -307,10 +307,10 @@ func TestWebHookController_updateWebHook(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/web-hooks/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_SYSTEM_SETTINGS",
+			"web-hook.update",
 		},
 	}, time.Minute*15)
 
@@ -335,10 +335,10 @@ func TestWebHookController_noteMessage_필수값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/3/note", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"NOTE_WEB_HOOKS",
+			"web-hook-note.create",
 		},
 	}, time.Minute*15)
 
@@ -366,10 +366,10 @@ func TestWebHookController_noteMessage_id_가_없는_경우(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/1000/note", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"NOTE_WEB_HOOKS",
+			"web-hook-note.create",
 		},
 	}, time.Minute*15)
 
@@ -397,10 +397,10 @@ func TestWebHookController_noteMessage(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/web-hooks/3/note", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"NOTE_WEB_HOOKS",
+			"web-hook-note.create",
 		},
 	}, time.Minute*15)
 

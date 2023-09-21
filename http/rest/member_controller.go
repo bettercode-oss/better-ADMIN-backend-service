@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"better-admin-backend-service/app/middlewares"
 	"better-admin-backend-service/constants"
 	"better-admin-backend-service/dtos"
 	"better-admin-backend-service/errors"
@@ -38,23 +37,13 @@ func (c MemberController) MapRoutes() {
 	route := c.routerGroup.Group("/members")
 
 	route.POST("", c.signUpMember)
-	route.GET("", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		etag.HttpEtagCache(0),
-		c.getMembers)
-	route.GET("/my", middlewares.PermissionChecker([]string{"*"}),
-		c.getCurrentMember)
-	route.GET("/:id", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		etag.HttpEtagCache(0),
-		c.getMember)
-	route.PUT("/:id/assign-roles", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		c.assignRole)
-	route.PUT("/:id/approved", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		c.approveMember)
-	route.PUT("/:id/rejected", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		c.rejectMember)
-	route.GET("/search-filters", middlewares.PermissionChecker([]string{constants.PermissionManageMembers}),
-		etag.HttpEtagCache(0),
-		c.getSearchFilters)
+	route.GET("", etag.HttpEtagCache(0), c.getMembers)
+	route.GET("/my", c.getCurrentMember)
+	route.GET("/:id", etag.HttpEtagCache(0), c.getMember)
+	route.PUT("/:id/assign-roles", c.assignRole)
+	route.PUT("/:id/approved", c.approveMember)
+	route.PUT("/:id/rejected", c.rejectMember)
+	route.GET("/search-filters", etag.HttpEtagCache(0), c.getSearchFilters)
 }
 
 func (c MemberController) signUpMember(ctx *gin.Context) {

@@ -12,17 +12,17 @@ import (
 	"time"
 )
 
-func TestAccessControlController_createPermission_필수_값_확인(t *testing.T) {
+func TestAccessControlController_createPermission_필수_값이_없으면_Bad_Request를_반환한다(t *testing.T) {
 	// given
 	requestBody := `{
 		"description": "상품 관리 권한"
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/permissions", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.create",
 		},
 	}, time.Minute*15)
 
@@ -40,7 +40,7 @@ func TestAccessControlController_createPermission_필수_값_확인(t *testing.T
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
-func TestAccessControlController_createPermission_권한_확인(t *testing.T) {
+func TestAccessControlController_createPermission_권한이_없으면_Forbidden_을_반환한다(t *testing.T) {
 	// given
 	requestBody := `{
 		"name": "PRODUCT-MANGED",
@@ -48,11 +48,9 @@ func TestAccessControlController_createPermission_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/permissions", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"TC",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -69,7 +67,7 @@ func TestAccessControlController_createPermission_권한_확인(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
-func TestAccessControlController_createPermission(t *testing.T) {
+func TestAccessControlController_createPermission_필수_값을_넣으면_권한을_생성한다(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -79,10 +77,10 @@ func TestAccessControlController_createPermission(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/permissions", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.create",
 		},
 	}, time.Minute*15)
 
@@ -100,7 +98,7 @@ func TestAccessControlController_createPermission(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestAccessControlController_createPermission_권한명이_이미_있는_경우(t *testing.T) {
+func TestAccessControlController_createPermission_권한명이_이미_있으면_BadReqeust를_반환하고_함께_메시지를_반환한다(t *testing.T) {
 	testdb.DatabaseFixture{}.SetUpDefault(gormDB)
 
 	// given
@@ -109,10 +107,10 @@ func TestAccessControlController_createPermission_권한명이_이미_있는_경
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/permissions", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.create",
 		},
 	}, time.Minute*15)
 
@@ -130,19 +128,17 @@ func TestAccessControlController_createPermission_권한명이_이미_있는_경
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, "duplicated", actual.(map[string]interface{})["message"])
+	assert.Equal(t, "duplicated", actual.(map[string]any)["message"])
 }
 
 func TestAccessControlController_getPermissions_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=2&pageSize=2", nil)
-	token, err := generateTestJWT(map[string]interface{}{
-		"Id": 1,
-		"Permissions": []string{
-			"TC",
-		},
+	token, err := generateTestJWT(map[string]any{
+		"Id":          1,
+		"Permissions": []string{"access-control-permission.update"},
 	}, time.Minute*15)
 
 	if err != nil {
@@ -163,10 +159,10 @@ func TestAccessControlController_getPermissions(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=2&pageSize=2", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -182,12 +178,12 @@ func TestAccessControlController_getPermissions(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":          float64(3),
 				"type":        "user-define",
 				"typeName":    "사용자정의",
@@ -206,10 +202,10 @@ func TestAccessControlController_getPermissions_이름으로_검색(t *testing.T
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions?page=1&pageSize=10&name=ACCESS", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -225,12 +221,12 @@ func TestAccessControlController_getPermissions_이름으로_검색(t *testing.T
 	// then
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":          float64(3),
 				"type":        "user-define",
 				"typeName":    "사용자정의",
@@ -247,10 +243,10 @@ func TestAccessControlController_getPermissions_이름으로_검색(t *testing.T
 func TestAccessControlController_getPermission_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-permission.delete",
 		},
 	}, time.Minute*15)
 
@@ -272,10 +268,10 @@ func TestAccessControlController_getPermission(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -292,10 +288,10 @@ func TestAccessControlController_getPermission(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"id":          float64(3),
 		"type":        "user-define",
 		"typeName":    "사용자정의",
@@ -312,10 +308,10 @@ func TestAccessControlController_getPermission_ID에_해당하는_권한이_없�
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/permissions/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -341,10 +337,10 @@ func TestAccessControlController_updatePermission_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -369,10 +365,10 @@ func TestAccessControlController_updatePermission_필수_값_확인(t *testing.T
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.update",
 		},
 	}, time.Minute*15)
 
@@ -401,10 +397,10 @@ func TestAccessControlController_updatePermission_permission_id가_유효하지_
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/1000", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.update",
 		},
 	}, time.Minute*15)
 
@@ -432,10 +428,10 @@ func TestAccessControlController_updatePermission(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.update",
 		},
 	}, time.Minute*15)
 
@@ -463,10 +459,10 @@ func TestAccessControlController_UpdatePermission_사전_정의_유형(t *testin
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/2", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.update",
 		},
 	}, time.Minute*15)
 
@@ -483,9 +479,9 @@ func TestAccessControlController_UpdatePermission_사전_정의_유형(t *testin
 	// then
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, "non changeable", actual.(map[string]interface{})["message"])
+	assert.Equal(t, "non changeable", actual.(map[string]any)["message"])
 }
 
 func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_경우(t *testing.T) {
@@ -498,10 +494,10 @@ func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/permissions/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.update",
 		},
 	}, time.Minute*15)
 
@@ -518,9 +514,9 @@ func TestAccessControlController_UpdatePermission_이미_기존에_존재하는_
 	// then
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, "duplicated", actual.(map[string]interface{})["message"])
+	assert.Equal(t, "duplicated", actual.(map[string]any)["message"])
 }
 
 func TestAccessControlController_deletePermission_권한_확인(t *testing.T) {
@@ -528,10 +524,10 @@ func TestAccessControlController_deletePermission_권한_확인(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/permissions/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-permission.read",
 		},
 	}, time.Minute*15)
 
@@ -553,10 +549,10 @@ func TestAccessControlController_deletePermission_member_id_가_유효하지_않
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/permissions/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.delete",
 		},
 	}, time.Minute*15)
 
@@ -578,10 +574,10 @@ func TestAccessControlController_deletePermission(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/permissions/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.delete",
 		},
 	}, time.Minute*15)
 
@@ -603,10 +599,10 @@ func TestAccessControlController_deletePermission_사전_정의_유형(t *testin
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/permissions/2", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-permission.delete",
 		},
 	}, time.Minute*15)
 
@@ -622,9 +618,9 @@ func TestAccessControlController_deletePermission_사전_정의_유형(t *testin
 	// then
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	var resp interface{}
+	var resp any
 	json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.Equal(t, "non changeable", resp.(map[string]interface{})["message"])
+	assert.Equal(t, "non changeable", resp.(map[string]any)["message"])
 }
 
 func TestAccessControlController_createRole_권한_확인(t *testing.T) {
@@ -636,10 +632,10 @@ func TestAccessControlController_createRole_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-permission.create",
 		},
 	}, time.Minute*15)
 
@@ -665,10 +661,10 @@ func TestAccessControlController_createRole_필수값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.create",
 		},
 	}, time.Minute*15)
 
@@ -697,10 +693,10 @@ func TestAccessControlController_createRole(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/access-control/roles", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.create",
 		},
 	}, time.Minute*15)
 
@@ -721,10 +717,10 @@ func TestAccessControlController_createRole(t *testing.T) {
 func TestAccessControlController_getRoles_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-role.create",
 		},
 	}, time.Minute*15)
 
@@ -747,10 +743,10 @@ func TestAccessControlController_getRoles(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.read",
 		},
 	}, time.Minute*15)
 
@@ -767,49 +763,49 @@ func TestAccessControlController_getRoles(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":          float64(1),
 				"type":        "pre-define",
 				"typeName":    "사전정의",
 				"name":        "SYSTEM MANAGER",
 				"description": "시스템 관리자",
-				"permissions": []interface{}{
-					map[string]interface{}{
+				"permissions": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "MANAGE_SYSTEM_SETTINGS",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MANAGE_MEMBERS",
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":          float64(2),
 				"type":        "pre-define",
 				"typeName":    "사전정의",
 				"name":        "MEMBER MANAGER",
 				"description": "멤버 관리자",
-				"permissions": []interface{}{
-					map[string]interface{}{
+				"permissions": []any{
+					map[string]any{
 						"id":   float64(2),
 						"name": "MANAGE_MEMBERS",
 					},
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"id":          float64(3),
 				"type":        "user-define",
 				"typeName":    "사용자정의",
 				"name":        "테스트 관리자",
 				"description": "",
-				"permissions": []interface{}{
-					map[string]interface{}{
+				"permissions": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "MANAGE_SYSTEM_SETTINGS",
 					},
@@ -827,10 +823,10 @@ func TestAccessControlController_getRoles_이름으로_검색(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles?name=테스", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.read",
 		},
 	}, time.Minute*15)
 
@@ -847,19 +843,19 @@ func TestAccessControlController_getRoles_이름으로_검색(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
-		"result": []interface{}{
-			map[string]interface{}{
+	expected := map[string]any{
+		"result": []any{
+			map[string]any{
 				"id":          float64(3),
 				"type":        "user-define",
 				"typeName":    "사용자정의",
 				"name":        "테스트 관리자",
 				"description": "",
-				"permissions": []interface{}{
-					map[string]interface{}{
+				"permissions": []any{
+					map[string]any{
 						"id":   float64(1),
 						"name": "MANAGE_SYSTEM_SETTINGS",
 					},
@@ -875,10 +871,10 @@ func TestAccessControlController_getRoles_이름으로_검색(t *testing.T) {
 func TestAccessControlController_getRole_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -901,10 +897,10 @@ func TestAccessControlController_getRole(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.read",
 		},
 	}, time.Minute*15)
 
@@ -921,18 +917,18 @@ func TestAccessControlController_getRole(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"id":          float64(3),
 		"type":        "user-define",
 		"typeName":    "사용자정의",
 		"name":        "테스트 관리자",
 		"description": "",
 		"createdAt":   "1982-01-04T00:00:00Z",
-		"permissions": []interface{}{
-			map[string]interface{}{
+		"permissions": []any{
+			map[string]any{
 				"id":   float64(1),
 				"name": "MANAGE_SYSTEM_SETTINGS",
 			},
@@ -947,10 +943,10 @@ func TestAccessControlController_getRole_ID가_없는_경우(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodGet, "/api/access-control/roles/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.read",
 		},
 	}, time.Minute*15)
 
@@ -977,10 +973,10 @@ func TestAccessControlController_updateRole_권한_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/roles/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-role.read",
 		},
 	}, time.Minute*15)
 
@@ -1006,10 +1002,10 @@ func TestAccessControlController_updateRole_필수값_확인(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/roles/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -1038,10 +1034,10 @@ func TestAccessControlController_updateRole_role_id가_유효하지_않은_경�
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/roles/1000", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -1070,10 +1066,10 @@ func TestAccessControlController_updateRole(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/roles/3", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -1102,10 +1098,10 @@ func TestAccessControlController_updateRole_사전정의_유형(t *testing.T) {
 	}`
 
 	req := httptest.NewRequest(http.MethodPut, "/api/access-control/roles/2", strings.NewReader(requestBody))
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -1122,18 +1118,18 @@ func TestAccessControlController_updateRole_사전정의_유형(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, "non changeable", actual.(map[string]interface{})["message"])
+	assert.Equal(t, "non changeable", actual.(map[string]any)["message"])
 }
 
 func TestAccessControlController_deleteRole_권한_확인(t *testing.T) {
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/roles/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"TC",
+			"access-control-role.update",
 		},
 	}, time.Minute*15)
 
@@ -1155,10 +1151,10 @@ func TestAccessControlController_deleteRole_role_id_가_유효하지_않은_경�
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/roles/1000", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.delete",
 		},
 	}, time.Minute*15)
 
@@ -1180,10 +1176,10 @@ func TestAccessControlController_deleteRole(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/roles/3", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.delete",
 		},
 	}, time.Minute*15)
 
@@ -1205,10 +1201,10 @@ func TestAccessControlController_deleteRole_사전정의_유형(t *testing.T) {
 
 	// given
 	req := httptest.NewRequest(http.MethodDelete, "/api/access-control/roles/2", nil)
-	token, err := generateTestJWT(map[string]interface{}{
+	token, err := generateTestJWT(map[string]any{
 		"Id": 1,
 		"Permissions": []string{
-			"MANAGE_ACCESS_CONTROL",
+			"access-control-role.delete",
 		},
 	}, time.Minute*15)
 
@@ -1225,7 +1221,7 @@ func TestAccessControlController_deleteRole_사전정의_유형(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	fmt.Println(rec.Body.String())
 
-	var actual interface{}
+	var actual any
 	json.Unmarshal(rec.Body.Bytes(), &actual)
-	assert.Equal(t, "non changeable", actual.(map[string]interface{})["message"])
+	assert.Equal(t, "non changeable", actual.(map[string]any)["message"])
 }
